@@ -2,7 +2,7 @@
 
 Guia digital para descobrir pontos turísticos, restaurantes, bares, lazer e compras em Imperatriz-MA.
 
-Projeto desenvolvido na disciplina de Projeto e Requisito de Software (IFMA, turma 20262.8.BCC.845.1I).
+Projeto desenvolvido na disciplina de Projeto e Requisito de Software (IFMA - Imperatriz)
 
 ## Equipe
 - Ana Clara Pontes Miranda
