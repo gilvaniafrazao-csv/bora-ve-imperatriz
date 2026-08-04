@@ -20,7 +20,7 @@
 
 ## 3. Ferramentas
 
-- Gestão e link do quadro: GitHub Projects — [PREENCHER com o link após criar]. Escolhido porque já se integra nativamente ao repositório (issues viram cartões do quadro automaticamente) e é gratuito, evitando logar em uma ferramenta separada.
+- Gestão e link do quadro: GitHub Projects — [](https://github.com/users/gilvaniafrazao-csv/projects/1)
 - Convite ao professor confirmado em: [PREENCHER — fernando.chagas@ifma.edu.br]
 - Repositório/documentação: GitHub — [PREENCHER com o link após criar]
 - Canal de comunicação: WhatsApp
@@ -40,7 +40,7 @@
 
 **Indício inicial:** A existência e popularidade de iniciativas parecidas em outras cidades (ex: Qual a Boa Manaus) mostra que existe demanda por esse tipo de curadoria local. Além disso, Imperatriz não tem, até onde a equipe identificou, uma plataforma unificada e atualizada com esse tipo de informação turística/gastronômica.
 
-**Acesso à evidência:** [PREENCHER — pensem em: turistas ou pessoas que visitaram a cidade recentemente, donos de pousadas/hotéis, donos de restaurantes e bares locais, grupos de turismo da prefeitura de Imperatriz, secretaria de turismo do município, se existir]
+**Acesso à evidência:** A equipe pretende conversar com pelo menos 3 pessoas nas próximas semanas: (1) turistas ou visitantes recentes de Imperatriz, buscados em redes sociais/grupos ou indicação pessoal; (2) donos ou atendentes de pousadas/hotéis locais, que lidam diretamente com visitantes perdidos na cidade; (3) donos de restaurantes, bares ou pontos de lazer, para entender se sentem falta de mais visibilidade.
 
 **Resultado desejado:** Uma pessoa que não conhece Imperatriz consegue, em poucos minutos, encontrar opções relevantes de onde comer, se divertir ou passear, com informações confiáveis e organizadas por categoria.
 
@@ -48,13 +48,22 @@
 
 **Escopo inicial:** Catálogo de pontos turísticos, restaurantes, bares e opções de lazer/compras em Imperatriz, navegável por categoria/filtro, com informações básicas de cada local.
 
-**Não escopo (por enquanto):** Geração automática de roteiros personalizados (dias, estilo, orçamento) — ideia boa, mas fica para uma fase posterior, depois que o catálogo básico estiver validado.
+**Não escopo (por enquanto):** Geração automática de roteiros personalizados (dias, estilo, orçamento).
 
-**Premissas:** [PREENCHER, ex: "assumimos que existe volume suficiente de estabelecimentos interessantes para justificar o catálogo", "assumimos que conseguiremos coletar essas informações de forma confiável"]
+**Premissas:** 
+- Assumimos que existe volume suficiente de pontos turísticos, restaurantes, bares e opções de lazer em Imperatriz para justificar um catálogo dedicado.
+- Assumimos que as pessoas que chegam à cidade realmente sentem falta de uma fonte centralizada de informação (e não resolvem isso facilmente por indicação de conhecidos ou Google Maps).
+- Assumimos que conseguiremos levantar as informações dos estabelecimentos de forma manual (visitando, ligando ou pesquisando online), sem depender de parceria formal com a prefeitura ou os próprios comércios nesta fase inicial.
 
-**Restrições:** [PREENCHER, ex: tempo do semestre, equipe sem orçamento para fotos profissionais, dependência de dados que precisam ser levantados manualmente]
+**Restrições:** 
+- Prazo limitado ao semestre letivo, com equipe de apenas 3 integrantes conciliando a disciplina com outras matérias.
+- Nenhum orçamento disponível para fotos profissionais, anúncios pagos ou aquisição de dados de terceiros.
+- Levantamento de dados dos estabelecimentos será manual (sem acesso a uma base de dados pronta ou API do setor de turismo local).
 
-**Riscos:** [PREENCHER, ex: dificuldade de manter os dados atualizados, baixa adesão de estabelecimentos para fornecer informações, escopo crescer demais se a função de roteiro for antecipada]
+**Riscos:**
+- Dificuldade em manter as informações atualizadas ao longo do tempo (horários, endereços e funcionamento de estabelecimentos mudam).
+- Baixa disposição de donos de estabelecimentos em fornecer informações ou fotos para o catálogo.
+- Risco de não encontrar pessoas suficientes para entrevistar a tempo do checkpoint, o que enfraqueceria a evidência do problema.
 
 **Justificativa de viabilidade:** O escopo inicial (catálogo simples e navegável) é pequeno o suficiente para ser levantado e implementado no semestre, especialmente por não depender de integrações complexas nem de geração automática de conteúdo — isso fica para uma etapa futura.
 
@@ -68,7 +77,7 @@
 ## 6. Sprint 1
 
 - Objetivo da sprint: Levantar evidências sobre o problema (conversas com pessoas que já visitaram/moram em Imperatriz) e organizar a estrutura inicial do projeto (quadro, repositório, primeiras categorias de lugares a mapear).
-- Link do quadro: [PREENCHER]
+- Link do quadro: [](https://github.com/users/gilvaniafrazao-csv/projects/1)
 - Principal bloqueio atual: [PREENCHER, ou "sem bloqueio"]
 - Decisão necessária: [PREENCHER, ex: definir se será app, site ou os dois; definir fonte inicial de dados dos estabelecimentos]
 
