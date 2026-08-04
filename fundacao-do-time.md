@@ -9,9 +9,9 @@
 ## 2. Acordo de trabalho
 
 - Canal oficial: WhatsApp (grupo da equipe)
-- Disponibilidade comum: [PREENCHER]
+- Disponibilidade comum: segunda, terça e sexta
 - Prazo de resposta: até 24 horas
-- Horário-limite da daily assíncrona nos dias úteis sem aula: [PREENCHER]
+- Horário-limite da daily assíncrona nos dias úteis sem aula: segunda 21h, terça 16h e sexta 16h
 - Registro de decisões: arquivo decisoes.md no repositório do GitHub, com entradas por data (ex: ## 04/08 — decisão de manter escopo sem roteiro personalizado).
 - Atualização do quadro: antes de cada aula (quarta e quinta-feira)
 - Tratamento de bloqueios: avisar no grupo do WhatsApp assim que identificado + marcar o item como bloqueado no GitHub Projects
@@ -76,8 +76,8 @@
 
 - Objetivo da sprint: Levantar evidências sobre o problema (conversas com pessoas que já visitaram/moram em Imperatriz) e organizar a estrutura inicial do projeto (quadro, repositório, primeiras categorias de lugares a mapear).
 - Link do quadro: <https://github.com/users/gilvaniafrazao-csv/projects/1>
-- Principal bloqueio atual: [PREENCHER]
-- Decisão necessária: [PREENCHER]
+- Principal bloqueio atual: Sem bloqueio no momento
+- Decisão necessária: A ideia de produto ainda não está 100% definida e validada; é necessário avançar com as entrevistas e o mapeamento inicial de pontos de interesse para confirmar (ou ajustar) o problema e o escopo antes de aprofundar decisões técnicas.
 
 ## 7. Confirmação da equipe
 
