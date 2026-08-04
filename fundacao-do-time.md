@@ -1,12 +1,12 @@
-# Fundação do time — [nome provisório da equipe]
+# Fundação do time — Bora Vê Imperatriz
 
-> ⚠️ Este é um rascunho inicial. Os campos marcados com `[PREENCHER]` ainda precisam ser definidos pelo time antes do envio.
+> ⚠️ Este é um rascunho inicial.
 
 ## 1. Integrantes e responsabilidades na Sprint 1
 
 - Ana Clara Pontes Miranda — Coordenação e gestão da Sprint 1: organizar e priorizar os itens do quadro, acompanhar bloqueios e prazos, conduzir o registro de decisões (decisoes.md), garantir visão geral do progresso técnico e da pesquisa
 - Gilvânia Elen Costa Frazão — Execução da pesquisa e evidência do problema (contato com pessoas afetadas) + estruturação técnica inicial (repositório no GitHub, configuração do quadro, levantamento da stack)
-- [Nome completo 3] — [PREENCHER]
+- Tcheul's Layra Varão — Levantamento inicial do conteúdo do produto: mapear e catalogar os primeiros pontos turísticos, restaurantes, bares e opções de lazer de Imperatriz que vão compor o catálogo, e apoiar a pesquisa de evidência com pessoas afetadas
 
 ## 2. Acordo de trabalho
 
@@ -27,7 +27,7 @@
 
 ## 4. Proposta inicial
 
-**Título provisório:** Qual a Boa Imperatriz _(ou nome próprio a definir)_
+**Título provisório:** Bora Vê Imperatriz
 
 **Problema:** Pessoas que chegam a Imperatriz-MA — sejam turistas, viajantes a trabalho ou até moradores novos na cidade — não têm um jeito fácil de descobrir onde ficam os pontos turísticos, restaurantes, bares, opções de lazer e compras da cidade. A informação está espalhada (Google Maps genérico, indicações de conhecidos, redes sociais soltas), o que faz com que essas pessoas percam tempo, deixem de conhecer bons lugares ou tenham experiências ruins por falta de orientação centralizada.
 
