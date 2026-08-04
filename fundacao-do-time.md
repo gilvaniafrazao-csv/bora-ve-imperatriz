@@ -20,7 +20,7 @@
 
 ## 3. Ferramentas
 
-- Gestão e link do quadro: GitHub Projects — [](https://github.com/users/gilvaniafrazao-csv/projects/1)
+- Gestão e link do quadro: GitHub Projects — <https://github.com/users/gilvaniafrazao-csv/projects/1>
 - Convite ao professor confirmado em: [PREENCHER — fernando.chagas@ifma.edu.br]
 - Repositório/documentação: GitHub — [PREENCHER com o link após criar]
 - Canal de comunicação: WhatsApp
@@ -77,7 +77,7 @@
 ## 6. Sprint 1
 
 - Objetivo da sprint: Levantar evidências sobre o problema (conversas com pessoas que já visitaram/moram em Imperatriz) e organizar a estrutura inicial do projeto (quadro, repositório, primeiras categorias de lugares a mapear).
-- Link do quadro: [](https://github.com/users/gilvaniafrazao-csv/projects/1)
+- Link do quadro: <https://github.com/users/gilvaniafrazao-csv/projects/1>
 - Principal bloqueio atual: [PREENCHER, ou "sem bloqueio"]
 - Decisão necessária: [PREENCHER, ex: definir se será app, site ou os dois; definir fonte inicial de dados dos estabelecimentos]
 
