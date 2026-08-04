@@ -11,10 +11,10 @@
 ## 2. Acordo de trabalho
 
 - Canal oficial: WhatsApp (grupo da equipe)
-- Disponibilidade comum: [PREENCHER, ex: noites de seg/ter/qui]
+- Disponibilidade comum: [PREENCHER]
 - Prazo de resposta: até 24 horas
-- Horário-limite da daily assíncrona nos dias úteis sem aula: [PREENCHER, ex: até 20h]
-- Registro de decisões: arquivo decisoes.md no repositório do GitHub, com entradas por data (ex: ## 04/08 — decisão de manter escopo sem roteiro personalizado). Evita depender de mensagens que se perdem no WhatsApp.
+- Horário-limite da daily assíncrona nos dias úteis sem aula: [PREENCHER]
+- Registro de decisões: arquivo decisoes.md no repositório do GitHub, com entradas por data (ex: ## 04/08 — decisão de manter escopo sem roteiro personalizado).
 - Atualização do quadro: antes de cada aula (quarta e quinta-feira)
 - Tratamento de bloqueios: avisar no grupo do WhatsApp assim que identificado + marcar o item como bloqueado no GitHub Projects
 
