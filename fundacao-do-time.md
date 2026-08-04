@@ -21,8 +21,8 @@
 ## 3. Ferramentas
 
 - Gestão e link do quadro: GitHub Projects — <https://github.com/users/gilvaniafrazao-csv/projects/1>
-- Convite ao professor confirmado em: [PREENCHER — fernando.chagas@ifma.edu.br]
-- Repositório/documentação: GitHub — [PREENCHER com o link após criar]
+- Convite ao professor confirmado em: fernando.chagas@ifma.edu.br
+- Repositório/documentação: GitHub — <https://github.com/gilvaniafrazao-csv/bora-ve-imperatriz/tree/main>
 - Canal de comunicação: WhatsApp
 
 ## 4. Proposta inicial
