@@ -1,7 +1,5 @@
 # Fundação do time — Bora Vê Imperatriz
 
-> ⚠️ Este é um rascunho inicial.
-
 ## 1. Integrantes e responsabilidades na Sprint 1
 
 - Ana Clara Pontes Miranda — Coordenação e gestão da Sprint 1: organizar e priorizar os itens do quadro, acompanhar bloqueios e prazos, conduzir o registro de decisões (decisoes.md), garantir visão geral do progresso técnico e da pesquisa
@@ -21,7 +19,7 @@
 ## 3. Ferramentas
 
 - Gestão e link do quadro: GitHub Projects — <https://github.com/users/gilvaniafrazao-csv/projects/1>
-- Convite ao professor confirmado em: fernando.chagas@ifma.edu.br
+- Convite ao professor confirmado em: Convite enviado para fernando.chagas@ifma.edu.br em 04/08/2026, aguardando aceite
 - Repositório/documentação: GitHub — <https://github.com/gilvaniafrazao-csv/bora-ve-imperatriz/tree/main>
 - Canal de comunicação: WhatsApp
 
@@ -78,9 +76,9 @@
 
 - Objetivo da sprint: Levantar evidências sobre o problema (conversas com pessoas que já visitaram/moram em Imperatriz) e organizar a estrutura inicial do projeto (quadro, repositório, primeiras categorias de lugares a mapear).
 - Link do quadro: <https://github.com/users/gilvaniafrazao-csv/projects/1>
-- Principal bloqueio atual: [PREENCHER, ou "sem bloqueio"]
-- Decisão necessária: [PREENCHER, ex: definir se será app, site ou os dois; definir fonte inicial de dados dos estabelecimentos]
+- Principal bloqueio atual: [PREENCHER]
+- Decisão necessária: [PREENCHER]
 
 ## 7. Confirmação da equipe
 
-- Todos os integrantes revisaram e concordaram: [sim/não]
+- Todos os integrantes revisaram e concordaram: Sim
