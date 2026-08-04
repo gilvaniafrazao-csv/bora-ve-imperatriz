@@ -7,7 +7,7 @@ Projeto desenvolvido na disciplina de Projeto e Requisito de Software (IFMA - Im
 ## Equipe
 - Ana Clara Pontes Miranda
 - Gilvânia Elen Costa Frazão
-- Tcheul's Layra Varão
+- Tcheul's Layra Varão da Silva
 
 ## Documentação
 - [Fundação do time e proposta inicial do produto](./fundacao-do-time.md)
