@@ -42,7 +42,7 @@
 
 **Resultado desejado:** Uma pessoa que não conhece Imperatriz consegue, em poucos minutos, encontrar opções relevantes de onde comer, se divertir ou passear, com informações confiáveis e organizadas por categoria.
 
-**Jornada crítica inicial:** Usuário abre o site/app → busca ou filtra por categoria (ex: restaurantes) → visualiza uma lista de lugares com informações básicas (localização, tipo, horário) → escolhe um local.
+**Jornada crítica inicial:** Usuário abre o site → busca ou filtra por categoria (ex: restaurantes) → visualiza uma lista de lugares com informações básicas (localização, tipo, horário) → escolhe um local.
 
 **Escopo inicial:** Catálogo de pontos turísticos, restaurantes, bares e opções de lazer/compras em Imperatriz, navegável por categoria/filtro, com informações básicas de cada local.
 
