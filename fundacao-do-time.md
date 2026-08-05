@@ -27,50 +27,75 @@
 
 **Título provisório:** Bora Vê Imperatriz
 
-**Problema:** Pessoas que chegam a Imperatriz-MA — sejam turistas, viajantes a trabalho ou até moradores novos na cidade — não têm um jeito fácil de descobrir onde ficam os pontos turísticos, restaurantes, bares, opções de lazer e compras da cidade. A informação está espalhada (Google Maps genérico, indicações de conhecidos, redes sociais soltas), o que faz com que essas pessoas percam tempo, deixem de conhecer bons lugares ou tenham experiências ruins por falta de orientação centralizada.
+**Problema:** Moradores, visitantes e turistas têm dificuldade para descobrir restaurantes, bares, cafeterias, eventos e atividades que combinem com seus interesses. As informações estão dispersas entre Google Maps, Instagram, TikTok e indicações de amigos, tornando a busca demorada e pouco personalizada. Ao mesmo tempo, pequenos estabelecimentos enfrentam dificuldades para ganhar visibilidade e atrair novos clientes sem investir em publicidade de alto custo.
 
 **Pessoas afetadas/usuárias:**
 
-- Turistas e visitantes que chegam à cidade sem conhecer a região;
-- Pessoas em viagem a trabalho, com pouco tempo livre e pouca familiaridade local;
-- Possivelmente moradores locais interessados em redescobrir a cidade;
+- Moradores da cidade;
+- Turistas e visitantes;
+- Pessoas procurando lugares para comer ou passear;
 - Donos de estabelecimentos (restaurantes, bares, pontos de lazer), que são influenciados pela visibilidade que o produto pode gerar.
 
-**Indício inicial:** A existência e popularidade de iniciativas parecidas em outras cidades (ex: Qual a Boa Manaus) mostra que existe demanda por esse tipo de curadoria local. Além disso, Imperatriz não tem, até onde a equipe identificou, uma plataforma unificada e atualizada com esse tipo de informação turística/gastronômica.
+**Indício inicial:** AObservou-se que a maioria das pessoas utiliza diversas plataformas para decidir onde sair (Google Maps, Instagram, TikTok e WhatsApp), indicando uma oportunidade para centralizar essas informações em uma experiência personalizada e regional.
 
-**Acesso à evidência:** A equipe pretende conversar com pelo menos 3 pessoas nas próximas semanas: (1) turistas ou visitantes recentes de Imperatriz, buscados em redes sociais/grupos ou indicação pessoal; (2) donos ou atendentes de pousadas/hotéis locais, que lidam diretamente com visitantes perdidos na cidade; (3) donos de restaurantes, bares ou pontos de lazer, para entender se sentem falta de mais visibilidade.
+**Acesso à evidência:** A equipe pretende conversar com pelo menos 3 pessoas nas próximas semanas: (1) turistas ou visitantes recentes de Imperatriz, buscados em redes sociais/grupos ou indicação pessoal; (2) donos ou atendentes de pousadas/hotéis locais, que lidam diretamente com visitantes perdidos na cidade; (3) donos de restaurantes, bares ou pontos de lazer, para entender se sentem falta de mais visibilidade. Além de fazer a análise das avaliações públicas do Google Maps e uma observação do comportamento dos usuários nas redes sociais.
 
-**Resultado desejado:** Uma pessoa que não conhece Imperatriz consegue, em poucos minutos, encontrar opções relevantes de onde comer, se divertir ou passear, com informações confiáveis e organizadas por categoria.
+**Resultado desejado:** Facilitar a descoberta de novos estabelecimentos, Reduzir o tempo necessário para decidir onde sair, aumentar a visibilidade dos pequenos negócios locais e validar o interesse dos estabelecimentos em utilizar promoções pagas na plataforma.
 
-**Jornada crítica inicial:** Usuário abre o site → busca ou filtra por categoria (ex: restaurantes) → visualiza uma lista de lugares com informações básicas (localização, tipo, horário) → escolhe um local.
+**Jornada crítica inicial:** 
+Criar uma conta.
+Escolher preferências.
+Permitir localização.
+Visualizar recomendações.
+Abrir o perfil do estabelecimento.
+Iniciar a rota pelo mapa.
 
-**Escopo inicial:** Catálogo de pontos turísticos, restaurantes, bares e opções de lazer/compras em Imperatriz, navegável por categoria/filtro, com informações básicas de cada local.
+**Escopo inicial:** 
+Cadastro e login.
+Onboarding de preferências.
+Página inicial personalizada.
+Busca por categorias.
+Filtros por preço, distância e categoria.
+Mapa com estabelecimentos.
+Página do estabelecimento.
+Favoritos.
+Avaliações próprias.
+Cadastro básico do comerciante.
+Dashboard simples para o proprietário.
 
-**Não escopo (por enquanto):** Geração automática de roteiros personalizados (dias, estilo, orçamento).
+**Não escopo (por enquanto):** 
+Reservas.
+Programa de fidelidade.
+Chat.
+Inteligência artificial.
+Gamificação.
 
 **Premissas:** 
 - Assumimos que existe volume suficiente de pontos turísticos, restaurantes, bares e opções de lazer em Imperatriz para justificar um catálogo dedicado.
 - Assumimos que as pessoas que chegam à cidade realmente sentem falta de uma fonte centralizada de informação (e não resolvem isso facilmente por indicação de conhecidos ou Google Maps).
-- Assumimos que conseguiremos levantar as informações dos estabelecimentos de forma manual (visitando, ligando ou pesquisando online), sem depender de parceria formal com a prefeitura ou os próprios comércios nesta fase inicial.
+- Usuários valorizam recomendações personalizadas.
+- Pequenos estabelecimentos buscam maior visibilidade.
+- A geolocalização melhora a experiência.
+- Comerciantes estariam dispostos a investir em destaque dentro da plataforma.
 
 **Restrições:** 
 - Prazo limitado ao semestre letivo, com equipe de apenas 3 integrantes conciliando a disciplina com outras matérias.
 - Nenhum orçamento disponível para fotos profissionais, anúncios pagos ou aquisição de dados de terceiros.
-- Levantamento de dados dos estabelecimentos será manual (sem acesso a uma base de dados pronta ou API do setor de turismo local).
+- Dependência de APIs de mapas.
 
 **Riscos:**
 - Dificuldade em manter as informações atualizadas ao longo do tempo (horários, endereços e funcionamento de estabelecimentos mudam).
-- Baixa disposição de donos de estabelecimentos em fornecer informações ou fotos para o catálogo.
-- Risco de não encontrar pessoas suficientes para entrevistar a tempo do checkpoint, o que enfraqueceria a evidência do problema.
+- Baixa adesão de estabelecimentos.
+- Dificuldade de validar o modelo de monetização.
 
-**Justificativa de viabilidade:** O escopo inicial (catálogo simples e navegável) é pequeno o suficiente para ser levantado e implementado no semestre, especialmente por não depender de integrações complexas nem de geração automática de conteúdo — isso fica para uma etapa futura.
+**Justificativa de viabilidade:** O Boravê será desenvolvido inicialmente como um MVP, priorizando apenas funcionalidades essenciais para validar a hipótese do produto. O uso de tecnologias consolidadas e APIs prontas reduz a complexidade do desenvolvimento e torna viável a entrega durante o semestre.
 
 ## 5. Stack inicial
 
 - Stack proposta: Site web responsivo com Next.js (React) no front-end e back-end, e Supabase (Postgres + autenticação prontos) como banco de dados. Deploy gratuito via Vercel.
-- Justificativa: com um time de 2 pessoas e prazo de um semestre, faz mais sentido usar uma única linguagem (JavaScript/TypeScript) tanto no front quanto no back, reduzindo a curva de aprendizado e o tempo de configuração. Um site responsivo evita a complexidade extra de publicar em lojas de aplicativo (Google Play/App Store) e já é acessível em qualquer celular pelo navegador. O Supabase evita ter que montar infraestrutura de banco de dados e autenticação do zero.
-- Maior incerteza técnica: se o formato de site (em vez de app) atende bem o caso de uso de turistas usando o celular em movimento — precisa ser validado com um protótipo simples e/ou conversa com usuários.
-- Primeiro experimento técnico, se necessário: protótipo simples de uma página com lista de lugares e filtro por categoria (ex: "restaurantes", "pontos turísticos"), pra testar a usabilidade em celular.
+- Justificativa: com um time de 3 pessoas e prazo de um semestre, faz mais sentido usar uma única linguagem (JavaScript/TypeScript) tanto no front quanto no back, reduzindo a curva de aprendizado e o tempo de configuração. Um site responsivo evita a complexidade extra de publicar em lojas de aplicativo (Google Play/App Store) e já é acessível em qualquer celular pelo navegador. O Supabase evita ter que montar infraestrutura de banco de dados e autenticação do zero.
+- Maior incerteza técnica: integração com APIs de mapas e na obtenção de informações atualizadas dos estabelecimentos, considerando custos, limites de uso e qualidade dos dados.
+- Primeiro experimento técnico, se necessário: desenvolver um protótipo capaz de obter a localização do usuário, exibir estabelecimentos próximos em um mapa e apresentar informações básicas como nome, categoria, horário de funcionamento e distância.
 
 ## 6. Sprint 1
 
