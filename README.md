@@ -7,6 +7,7 @@ Projeto desenvolvido na disciplina de Projeto e Requisito de Software (IFMA - Im
 ## Equipe
 - Ana Clara Pontes Miranda
 - Gilvânia Elen Costa Frazão
+- José Francisco Silva Júnior
 - Tcheul's Layra Varão da Silva
 
 ## Documentação
