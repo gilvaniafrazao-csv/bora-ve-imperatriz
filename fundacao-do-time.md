@@ -3,12 +3,13 @@
 ## 1. Integrantes e responsabilidades na Sprint 1
 
 - Ana Clara Pontes Miranda — Coordenação e gestão da Sprint 1: organizar e priorizar os itens do quadro, acompanhar bloqueios e prazos, conduzir o registro de decisões (decisoes.md), garantir visão geral do progresso técnico e da pesquisa
-- Gilvânia Elen Costa Frazão — Execução da pesquisa e evidência do problema (contato com pessoas afetadas) + estruturação técnica inicial (repositório no GitHub, configuração do quadro, levantamento da stack)
+- Gilvânia Elen Costa Frazão — Execução da pesquisa e evidência do problema (contato com pessoas afetadas)
+- José Francisco Silva Júnior - Estruturação técnica inicial (repositório no GitHub, configuração do quadro, levantamento e justificativa da stack técnica)
 - Tcheul's Layra Varão da Silva — Levantamento inicial do conteúdo do produto: mapear e catalogar os primeiros pontos turísticos, restaurantes, bares e opções de lazer de Imperatriz que vão compor o catálogo, e apoiar a pesquisa de evidência com pessoas afetadas
 
 ## 2. Acordo de trabalho
 
-- Canal oficial: WhatsApp (grupo da equipe)
+- Canal oficial: Slack
 - Disponibilidade comum: segunda, terça e sexta
 - Prazo de resposta: até 24 horas
 - Horário-limite da daily assíncrona nos dias úteis sem aula: segunda 21h, terça 16h e sexta 16h
@@ -21,7 +22,7 @@
 - Gestão e link do quadro: GitHub Projects — <https://github.com/users/gilvaniafrazao-csv/projects/1>
 - Convite ao professor confirmado em: Convite enviado para fernando.chagas@ifma.edu.br em 04/08/2026, aguardando aceite
 - Repositório/documentação: GitHub — <https://github.com/gilvaniafrazao-csv/bora-ve-imperatriz/tree/main>
-- Canal de comunicação: WhatsApp
+- Canal de comunicação: Slack
 
 ## 4. Proposta inicial
 
