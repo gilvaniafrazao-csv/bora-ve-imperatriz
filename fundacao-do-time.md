@@ -2,10 +2,17 @@
 
 ## 1. Integrantes e responsabilidades na Sprint 1
 
-- Ana Clara Pontes Miranda — Coordenação e gestão da Sprint 1: organizar e priorizar os itens do quadro, acompanhar bloqueios e prazos, conduzir o registro de decisões (decisoes.md), garantir visão geral do progresso técnico e da pesquisa
-- Gilvânia Elen Costa Frazão — Estruturação técnica inicial (repositório no GitHub, configuração do quadro, levantamento e justificativa da stack técnica)
-- José Francisco Silva Júnior - Execução da pesquisa e evidência do problema (contato com pessoas afetadas)
-- Tcheul's Layra Varão da Silva — Levantamento inicial do conteúdo do produto: mapear e catalogar os primeiros pontos turísticos, restaurantes, bares e opções de lazer de Imperatriz que vão compor o catálogo, e apoiar a pesquisa de evidência com pessoas afetadas
+Ana Clara Pontes Miranda:
+Coordenação e descoberta do produto: organizar e priorizar as atividades da Sprint 1, acompanhar o progresso e bloqueios, registrar decisões, conduzir a definição da proposta de valor e organizar as descobertas da equipe sobre usuários e problema.
+
+Gilvânia Elen Costa Frazão:
+Estruturação técnica e arquitetura inicial: organizar o repositório e quadro do projeto, pesquisar possibilidades de stack e infraestrutura, levantar requisitos técnicos e apoiar a definição das entidades e arquitetura a partir das histórias de usuário.
+
+José Francisco Silva Júnior:
+Pesquisa e validação do problema: conduzir entrevistas e conversas com pessoas afetadas pelo problema, registrar evidências, identificar padrões nas respostas e apoiar a validação das principais hipóteses sobre usuários e necessidades.
+
+Tcheul's Layra Varão da Silva:
+Pesquisa e definição da experiência do produto: apoiar a elaboração das histórias de usuário, mapear necessidades e comportamentos dos usuários e comerciantes, organizar os fluxos principais do produto e apoiar a definição do escopo do MVP.
 
 ## 2. Acordo de trabalho
 
@@ -15,7 +22,7 @@
 - Horário-limite da daily assíncrona nos dias úteis sem aula: segunda 21h, terça 16h e sexta 16h
 - Registro de decisões: arquivo decisoes.md no repositório do GitHub, com entradas por data (ex: ## 04/08 — decisão de manter escopo sem roteiro personalizado).
 - Atualização do quadro: antes de cada aula (quarta e quinta-feira)
-- Tratamento de bloqueios: avisar no grupo do WhatsApp assim que identificado + marcar o item como bloqueado no GitHub Projects
+- Tratamento de bloqueios: avisar no slack assim que identificado + marcar o item como bloqueado no GitHub Projects
 
 ## 3. Ferramentas
 
@@ -32,72 +39,83 @@
 
 **Pessoas afetadas/usuárias:**
 
-- Moradores da cidade;
+- Moradores de Imperatriz;
 - Turistas e visitantes;
-- Pessoas procurando lugares para comer ou passear;
-- Donos de estabelecimentos (restaurantes, bares, pontos de lazer), que são influenciados pela visibilidade que o produto pode gerar.
+- Pessoas procurando lugares para comer, passear ou se divertir;
+- Proprietários de restaurantes, bares e outros estabelecimentos locais, que podem se beneficiar de maior visibilidade;
+- Organizadores de eventos.
 
-**Indício inicial:** AObservou-se que a maioria das pessoas utiliza diversas plataformas para decidir onde sair (Google Maps, Instagram, TikTok e WhatsApp), indicando uma oportunidade para centralizar essas informações em uma experiência personalizada e regional.
+**Indício inicial:** Observou-se que muitas pessoas utilizam diversas plataformas para decidir onde sair, como Google Maps, Instagram, TikTok e WhatsApp, indicando uma possível oportunidade para centralizar essas informações em uma experiência personalizada e regional.
 
-**Acesso à evidência:** A equipe pretende conversar com pelo menos 3 pessoas nas próximas semanas: (1) turistas ou visitantes recentes de Imperatriz, buscados em redes sociais/grupos ou indicação pessoal; (2) donos ou atendentes de pousadas/hotéis locais, que lidam diretamente com visitantes perdidos na cidade; (3) donos de restaurantes, bares ou pontos de lazer, para entender se sentem falta de mais visibilidade. Além de fazer a análise das avaliações públicas do Google Maps e uma observação do comportamento dos usuários nas redes sociais.
+**Acesso à evidência:** A equipe pretende conversar com pessoas que vivenciam o problema, incluindo moradores, visitantes recentes de Imperatriz e pessoas que costumam procurar restaurantes, bares, eventos e opções de lazer pela internet. Também serão realizadas conversas com proprietários ou responsáveis por estabelecimentos e eventos, buscando entender as dificuldades relacionadas à divulgação e atração de novos clientes. Como complemento, serão analisadas avaliações públicas e discussões em plataformas como Google Maps e redes sociais.
 
-**Resultado desejado:** Facilitar a descoberta de novos estabelecimentos, Reduzir o tempo necessário para decidir onde sair, aumentar a visibilidade dos pequenos negócios locais e validar o interesse dos estabelecimentos em utilizar promoções pagas na plataforma.
+**Resultado desejado:** 
+
+Facilitar a descoberta de novos estabelecimentos, eventos e opções de lazer;
+Reduzir o tempo necessário para decidir onde sair;
+Oferecer recomendações mais adequadas aos interesses e localização do usuário;
+Entender se estabelecimentos percebem valor em utilizar uma plataforma regional para aumentar sua visibilidade;
+Validar se existe interesse em mecanismos de promoção e benefícios oferecidos pela plataforma.
 
 **Jornada crítica inicial:** 
-Criar uma conta.
-Escolher preferências.
-Permitir localização.
-Visualizar recomendações.
-Abrir o perfil do estabelecimento.
-Iniciar a rota pelo mapa.
+Criar uma conta → informar preferências → permitir acesso à localização → visualizar recomendações → abrir o perfil de um estabelecimento/evento → visualizar informações → iniciar uma rota.
 
 **Escopo inicial:** 
-Cadastro e login.
-Onboarding de preferências.
-Página inicial personalizada.
-Busca por categorias.
-Filtros por preço, distância e categoria.
-Mapa com estabelecimentos.
-Página do estabelecimento.
-Favoritos.
-Avaliações próprias.
-Cadastro básico do comerciante.
-Dashboard simples para o proprietário.
+Cadastro e login;
+Onboarding com preferências do usuário;
+Página inicial personalizada;
+Busca e exploração por categorias;
+Filtros por preço, distância e categoria;
+Mapa com estabelecimentos e eventos;
+Página de detalhes do estabelecimento/evento;
+Favoritos;
+Perfil básico do estabelecimento;
+Área básica para o proprietário gerenciar informações do estabelecimento;
+Métricas básicas de visualização e interação.
 
 **Não escopo (por enquanto):** 
-Reservas.
-Programa de fidelidade.
-Chat.
-Inteligência artificial.
-Gamificação.
+Programa de fidelidade;
+Reservas;
+Inteligência artificial avançada para recomendações;
+Sistema avançado de anúncios e campanhas patrocinadas;
+Aplicativo nativo para Android e iOS.
 
 **Premissas:** 
-- Assumimos que existe volume suficiente de pontos turísticos, restaurantes, bares e opções de lazer em Imperatriz para justificar um catálogo dedicado.
-- Assumimos que as pessoas que chegam à cidade realmente sentem falta de uma fonte centralizada de informação (e não resolvem isso facilmente por indicação de conhecidos ou Google Maps).
-- Usuários valorizam recomendações personalizadas.
-- Pequenos estabelecimentos buscam maior visibilidade.
-- A geolocalização melhora a experiência.
-- Comerciantes estariam dispostos a investir em destaque dentro da plataforma.
+- Existe uma quantidade relevante de estabelecimentos, eventos e opções de lazer em Imperatriz para justificar uma experiência de descoberta regional;
+- Usuários têm dificuldade para descobrir opções além dos lugares que já conhecem;
+- Usuários valorizam recomendações baseadas em seus interesses e localização;
+- Pequenos estabelecimentos buscam formas de aumentar sua visibilidade;
+- A geolocalização pode facilitar a descoberta de opções próximas;
+- Estabelecimentos podem perceber valor em ferramentas de divulgação dentro da plataforma.
 
 **Restrições:** 
-- Prazo limitado ao semestre letivo, com equipe de apenas 3 integrantes conciliando a disciplina com outras matérias.
-- Nenhum orçamento disponível para fotos profissionais, anúncios pagos ou aquisição de dados de terceiros.
-- Dependência de APIs de mapas.
+Prazo limitado ao semestre letivo;
+Equipe de 4 integrantes conciliando o projeto com outras disciplinas;
+Orçamento limitado para infraestrutura, APIs e serviços externos;
+Dependência de APIs e serviços de terceiros, especialmente para mapas e localização;
+Necessidade de validar o produto antes de investir em funcionalidades mais complexas.
 
 **Riscos:**
-- Dificuldade em manter as informações atualizadas ao longo do tempo (horários, endereços e funcionamento de estabelecimentos mudam).
-- Baixa adesão de estabelecimentos.
-- Dificuldade de validar o modelo de monetização.
+A hipótese do problema pode não ser confirmada pelas entrevistas;
+Os usuários podem não perceber valor suficiente em uma plataforma regional;
+Dificuldade em manter informações de estabelecimentos atualizadas;
+Baixa adesão dos estabelecimentos;
+Dificuldade de validar o modelo de monetização;
+Dependência de APIs externas e seus custos;
+Crescimento excessivo do escopo durante o desenvolvimento.
 
-**Justificativa de viabilidade:** O Boravê será desenvolvido inicialmente como um MVP, priorizando apenas funcionalidades essenciais para validar a hipótese do produto. O uso de tecnologias consolidadas e APIs prontas reduz a complexidade do desenvolvimento e torna viável a entrega durante o semestre.
+**Justificativa de viabilidade:** O projeto será desenvolvido inicialmente como um MVP, priorizando as funcionalidades necessárias para validar as principais hipóteses sobre usuários, estabelecimentos e descoberta de opções de lazer em Imperatriz. A equipe pretende utilizar tecnologias e serviços já consolidados, reduzindo a complexidade de infraestrutura e permitindo concentrar os esforços na validação do problema e na construção da experiência principal do produto.
 
 ## 5. Stack inicial
 
-- Stack proposta: Site web responsivo com Next.js (React) no front-end e back-end, e Supabase (Postgres + autenticação prontos) como banco de dados. Deploy gratuito via Vercel.
-- Justificativa: com um time de 3 pessoas e prazo de um semestre, faz mais sentido usar uma única linguagem (JavaScript/TypeScript) tanto no front quanto no back, reduzindo a curva de aprendizado e o tempo de configuração. Um site responsivo evita a complexidade extra de publicar em lojas de aplicativo (Google Play/App Store) e já é acessível em qualquer celular pelo navegador. O Supabase evita ter que montar infraestrutura de banco de dados e autenticação do zero.
-- Maior incerteza técnica: integração com APIs de mapas e na obtenção de informações atualizadas dos estabelecimentos, considerando custos, limites de uso e qualidade dos dados.
-- Primeiro experimento técnico, se necessário: desenvolver um protótipo capaz de obter a localização do usuário, exibir estabelecimentos próximos em um mapa e apresentar informações básicas como nome, categoria, horário de funcionamento e distância.
+- Stack proposta: A stack ainda está em definição. A equipe pretende avaliar uma arquitetura baseada em aplicação web responsiva, considerando tecnologias já conhecidas pelos integrantes, como React/Next.js, TypeScript e Supabase. A decisão final será tomada após a definição das histórias de usuário, entidades, requisitos técnicos e necessidades de infraestrutura do MVP.
 
+- Justificativa: A escolha da stack será orientada pela necessidade de desenvolver um MVP funcional dentro do prazo do semestre, considerando o conhecimento técnico da equipe, simplicidade de desenvolvimento, custos de infraestrutura, facilidade de integração com APIs externas e possibilidade de evolução futura do produto.
+  
+- Maior incerteza técnica: A principal incerteza técnica está na integração com APIs de mapas e na obtenção de informações atualizadas dos estabelecimentos, considerando custos, limites de uso, disponibilidade e qualidade dos dados.
+  
+- Primeiro experimento técnico, se necessário: Desenvolver um protótipo capaz de obter a localização do usuário, exibir estabelecimentos próximos em um mapa e apresentar informações básicas como nome, categoria, horário de funcionamento e distância.
+  
 ## 6. Sprint 1
 
 - Objetivo da sprint: Levantar evidências sobre o problema (conversas com pessoas que já visitaram/moram em Imperatriz) e organizar a estrutura inicial do projeto (quadro, repositório, primeiras categorias de lugares a mapear).
