@@ -1,7 +1,7 @@
 ---
 name: Modelo de tarefa
 about: Template padrão para tarefas do backlog e das Sprints do projeto Bora Vê.
-title: ''
+title: TASK-BV-XX - Título
 labels: ''
 assignees: ''
 
