@@ -1,0 +1,17 @@
+# Dependências e builds (cada pacote tem o seu próprio .gitignore também)
+node_modules/
+dist/
+build/
+
+# Variáveis de ambiente
+.env
+.env.local
+
+# Logs
+*.log
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
