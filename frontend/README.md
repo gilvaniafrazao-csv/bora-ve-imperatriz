@@ -4,13 +4,18 @@ Estrutura inicial do projeto frontend, referente à task **TASK-BV-INFRA-04**.
 
 ## Stack
 
-- Next.js 14 (App Router)
+- Next.js 16 (App Router)
 - TypeScript
+- React 19
 - CSS normal (CSS Modules, sem framework de CSS)
+
+## Requisitos
+
+- Node.js 20.9 ou superior (recomendado: 22+ ou 24+)
 
 ## Como usar
 
-1. Copie todos os arquivos desta pasta para dentro da pasta do seu repositório (ou use esta pasta como o repositório em si).
+1. Copie todos os arquivos desta pasta para dentro da pasta `frontend/` do repositório do time.
 2. Instale as dependências:
    ```bash
    npm install
@@ -34,3 +39,7 @@ src/
 
 - Definir e configurar o backend (Supabase ou outro) quando a decisão de stack estiver fechada.
 - Definir as entidades/tabelas do banco conforme as histórias de usuário do MVP forem fechadas.
+
+## Nota de segurança
+
+Esse setup usa Next.js 16.3.4 (versão mais recente disponível), pois a linha 14.x não recebe mais correções de segurança da Vercel.
