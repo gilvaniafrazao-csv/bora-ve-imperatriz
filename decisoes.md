@@ -12,3 +12,15 @@ Decisões tomadas na estrutura inicial do PostgreSQL/Supabase (`docs/modelagem-b
 - **Promoções sem ledger financeiro.** Período, valor investido, objetivo, status e `external_payment_id` no gateway externo (RN10). Prioridade de exibição = `invested_amount` entre campanhas ativas; cota de espaços fica na aplicação (RN09).
 - **Deduplicação no schema + lookup na coleta.** Uniques de e-mail, `(source_id, external_id)`, telefone e site; colunas `name_normalized` / `address_normalized` para o matching da aplicação (RN06, RNF07).
 - **RLS como defesa em profundidade.** Leitura pública do catálogo ativo; escrita pelo owner/`auth.uid()`; coleta restrita. A API com Service Role ignora RLS e permanece responsável pela autorização das rotas.
+
+## 14/09/2026 — Cadastro de usuário comum (RF01 / L01)
+
+A lacuna L01 (criação de conta) foi fechada para o MVP das telas de CADASTRO:
+
+- **Escopo:** usuário comum (`usuario`), com nome, e-mail e senha — os campos da tela. Preferências (tela PREFERENCIA) ficam no RF03; login no RF02.
+- **Fora deste endpoint:** OAuth (Apple/Google/Facebook do protótipo) e papéis de proprietário/admin.
+- **Contrato:** `POST /api/auth/register`. E-mail único (case-insensitive). Senha com no mínimo 8 caracteres, persistida só como hash bcrypt (RNF05). Confirmação da conta = resposta `201`.
+
+## 14/09/2026 — Arquitetura em módulos
+
+Backend organizado por funcionalidade (`src/modules/<feature>`), com camadas `routes → controller → service → repository`. Infra comum em `config/` e `shared/`. Frontend: páginas em `app/`, fluxos em `features/`, HTTP em `lib/api`. Detalhes em `docs/arquitetura.md`.

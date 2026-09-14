@@ -51,27 +51,44 @@ Resposta esperada:
 ## Estrutura de pastas
 
 ```
-backend/
-├── src/
-│   ├── config/        # variáveis de ambiente e client do Supabase
-│   ├── errors/         # AppError — erro de aplicação com status/code
-│   ├── middlewares/    # errorHandler padronizado (JSON) e 404
-│   ├── routes/         # rotas da API (ex.: health.routes.ts)
-│   ├── app.ts           # criação e configuração do Express app
-│   └── server.ts        # ponto de entrada (sobe o servidor HTTP)
-├── .env.example
-├── package.json
-└── tsconfig.json
+backend/src/
+├── app.ts                 # composição da API (middlewares + routers)
+├── server.ts              # listen HTTP
+├── config/                # env e client Supabase
+├── shared/                # erros e HTTP comuns
+└── modules/
+    ├── health/            # GET /health
+    └── auth/              # POST /api/auth/register
 ```
+
+Arquitetura completa: [`docs/arquitetura.md`](../docs/arquitetura.md).
 
 ## Convenções para as próximas tasks
 
-- **Erros:** lance `AppError(message, statusCode, code)` — o `errorHandler`
-  global converte para `{ "error": { "code", "message" } }`. Nunca deixe
-  stack trace vazar para o cliente.
-- **Senhas (RNF05):** nunca armazenar em texto simples — usar hash (ex.:
-  `bcrypt`) antes de persistir, na task de cadastro (`TASK-BV-AUTH-02`).
-- **Rotas novas:** criar em `src/routes/<recurso>.routes.ts` e registrar em
-  `src/app.ts`, de preferência sob um prefixo `/api/...`.
-- **Acesso ao banco:** usar `getSupabaseClient()` de `src/config/supabase.ts`
-  (Service Role Key — uso restrito ao backend, nunca exposta ao frontend).
+- **Módulos:** criar `src/modules/<feature>/` com `routes → controller → service → repository`. Registrar o router em `app.ts`.
+- **Erros:** lance `AppError` — o `errorHandler` converte para `{ "error": { "code", "message" } }`.
+- **Senhas (RNF05):** hash bcrypt no serviço; o repositório só persiste `password_hash`.
+- **Banco:** somente nos `*.repository.ts`, via `getSupabaseClient()` (Service Role no backend).
+
+## Cadastro (RF01)
+
+`POST /api/auth/register`
+
+```json
+{
+  "name": "Ana",
+  "email": "ana@example.com",
+  "password": "senhaSegura"
+}
+```
+
+Resposta `201`:
+
+```json
+{
+  "message": "Conta criada com sucesso.",
+  "user": { "id": "...", "name": "Ana", "email": "ana@example.com", "createdAt": "..." }
+}
+```
+
+A senha é gravada só como hash bcrypt. E-mail duplicado retorna `409`. Campos inválidos retornam `400` com `error.details`.
