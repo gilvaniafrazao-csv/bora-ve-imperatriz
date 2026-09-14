@@ -30,15 +30,20 @@ Estrutura inicial do projeto frontend, referente à task **TASK-BV-INFRA-04**.
 
 ```
 src/
-  app/          → páginas e layout (App Router do Next.js)
-  components/   → componentes reutilizáveis (ainda vazio)
-  types/        → tipos TypeScript compartilhados (ainda vazio)
+  app/                 → páginas e rotas (App Router)
+  features/<domínio>/  → API e UI de um fluxo (ex.: auth)
+  lib/api/             → client HTTP do backend
+  types/               → tipos compartilhados
+  components/          → UI reutilizável (quando surgir)
 ```
 
-## Pendências (próxima task)
+Arquitetura completa: [`docs/arquitetura.md`](../docs/arquitetura.md).
 
-- Definir e configurar o backend (Supabase ou outro) quando a decisão de stack estiver fechada.
-- Definir as entidades/tabelas do banco conforme as histórias de usuário do MVP forem fechadas.
+Copie `.env.example` para `.env.local` e ajuste `NEXT_PUBLIC_API_URL` se a API não estiver em `http://localhost:3333`.
+
+## Pendências (próximas tasks)
+
+- Telas de cadastro/login em `app/` usando `features/auth`.
 
 ## Nota de segurança
 

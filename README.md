@@ -13,3 +13,5 @@ Projeto desenvolvido na disciplina de Projeto e Requisito de Software (IFMA - Im
 ## Documentação
 - [Fundação do time e proposta inicial do produto](./fundacao-do-time.md)
 - [Registro de decisões](./decisoes.md)
+- [Arquitetura](./docs/arquitetura.md)
+- [Modelagem do banco](./docs/modelagem-banco.md)

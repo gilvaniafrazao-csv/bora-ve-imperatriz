@@ -3,8 +3,9 @@ import express, { Application } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { env } from './config/env';
-import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
-import { healthRouter } from './routes/health.routes';
+import { authRouter } from './modules/auth/auth.routes';
+import { healthRouter } from './modules/health/health.routes';
+import { errorHandler, notFoundHandler } from './shared/http/errorHandler';
 
 export function createApp(): Application {
   const app = express();
@@ -14,12 +15,9 @@ export function createApp(): Application {
   app.use(express.json());
   app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
 
-  // Rotas
   app.use(healthRouter);
-  // Próximas tasks (AUTH-02, AUTH-03, ...) devem registrar suas rotas aqui,
-  // idealmente sob um prefixo, ex.: app.use('/api/auth', authRouter);
+  app.use('/api/auth', authRouter);
 
-  // Sempre por último: 404 e error handler
   app.use(notFoundHandler);
   app.use(errorHandler);
 
