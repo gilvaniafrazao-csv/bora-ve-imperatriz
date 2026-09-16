@@ -14,7 +14,8 @@ export const env = {
   port: Number(process.env.PORT ?? 3333),
   corsOrigin: (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
     .split(',')
-    .map((origin) => origin.trim()),
+    .map((origin) => origin.trim().replace(/^['"]|['"]$/g, ''))
+    .filter(Boolean),
 
   // Em desenvolvimento sem Supabase configurado ainda, deixamos o valor
   // opcional para não travar o `npm run dev` — mas ao usar o client

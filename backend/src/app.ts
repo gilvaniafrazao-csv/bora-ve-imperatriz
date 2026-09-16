@@ -24,12 +24,18 @@ function isAllowedOrigin(origin: string | undefined): boolean {
 export function createApp(): Application {
   const app = express();
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
+  );
   app.use(
     cors({
       origin(origin, callback) {
         callback(null, isAllowedOrigin(origin));
       },
+      methods: ["GET", "HEAD", "POST", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
     }),
   );
   app.use(express.json());
