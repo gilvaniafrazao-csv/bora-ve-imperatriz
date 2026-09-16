@@ -26,7 +26,7 @@ export function errorHandler(
     return;
   }
 
-  console.error('[unhandled error]', err);
+  console.error('[unhandled error]', err instanceof Error ? err.stack ?? err.message : err);
   res.status(500).json({
     error: {
       code: 'INTERNAL_SERVER_ERROR',

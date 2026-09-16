@@ -13,37 +13,52 @@ function isUniqueViolation(error: { code?: string; message?: string } | null): b
   );
 }
 
-function toDatabaseUnavailable(): AppError {
+function toDatabaseUnavailable(cause?: { code?: string; message?: string } | null): AppError {
+  if (cause) {
+    console.error('[auth.repository] supabase error', cause);
+  }
   return new AppError(
-    'Não foi possível concluir o cadastro. Tente novamente mais tarde.',
+    'Não foi possível concluir a operação. Tente novamente mais tarde.',
     503,
     'DATABASE_UNAVAILABLE',
+    cause ? { code: cause.code ?? null, message: cause.message ?? null } : undefined,
   );
 }
 
+async function runQuery<T>(label: string, operation: () => PromiseLike<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    console.error(`[auth.repository] ${label} threw`, error);
+    throw toDatabaseUnavailable(
+      error instanceof Error ? { message: error.message } : { message: String(error) },
+    );
+  }
+}
+
 export async function findUserIdByEmail(email: string): Promise<string | null> {
-  const { data, error } = await getSupabaseClient()
-    .from('users')
-    .select('id')
-    .ilike('email', email)
-    .maybeSingle<{ id: string }>();
+  const { data, error } = await runQuery('findUserIdByEmail', () =>
+    getSupabaseClient().from('users').select('id').ilike('email', email).maybeSingle<{ id: string }>(),
+  );
 
   if (error) {
-    throw toDatabaseUnavailable();
+    throw toDatabaseUnavailable(error);
   }
 
   return data?.id ?? null;
 }
 
 export async function findAuthUserByEmail(email: string): Promise<AuthUserRow | null> {
-  const { data, error } = await getSupabaseClient()
-    .from('users')
-    .select('id, name, email, created_at, password_hash')
-    .ilike('email', email)
-    .maybeSingle<AuthUserRow>();
+  const { data, error } = await runQuery('findAuthUserByEmail', () =>
+    getSupabaseClient()
+      .from('users')
+      .select('id, name, email, created_at, password_hash')
+      .ilike('email', email)
+      .maybeSingle<AuthUserRow>(),
+  );
 
   if (error) {
-    throw toDatabaseUnavailable();
+    throw toDatabaseUnavailable(error);
   }
 
   return data ?? null;
@@ -52,13 +67,12 @@ export async function findAuthUserByEmail(email: string): Promise<AuthUserRow | 
 export async function findCategoryIdsBySlugs(
   slugs: OnboardingCategorySlug[],
 ): Promise<string[]> {
-  const { data, error } = await getSupabaseClient()
-    .from('categories')
-    .select('id, slug')
-    .in('slug', slugs);
+  const { data, error } = await runQuery('findCategoryIdsBySlugs', () =>
+    getSupabaseClient().from('categories').select('id, slug').in('slug', slugs),
+  );
 
   if (error || !data) {
-    throw toDatabaseUnavailable();
+    throw toDatabaseUnavailable(error);
   }
 
   const idBySlug = new Map(data.map((row: { id: string; slug: string }) => [row.slug, row.id]));
@@ -78,15 +92,17 @@ export async function insertUser(
   input: Pick<RegisterInput, 'name' | 'email'>,
   passwordHash: string,
 ): Promise<PublicUser> {
-  const { data, error } = await getSupabaseClient()
-    .from('users')
-    .insert({
-      name: input.name,
-      email: input.email,
-      password_hash: passwordHash,
-    })
-    .select('id, name, email, created_at')
-    .single<UserRow>();
+  const { data, error } = await runQuery('insertUser', () =>
+    getSupabaseClient()
+      .from('users')
+      .insert({
+        name: input.name,
+        email: input.email,
+        password_hash: passwordHash,
+      })
+      .select('id, name, email, created_at')
+      .single<UserRow>(),
+  );
 
   if (error) {
     if (isUniqueViolation(error)) {
@@ -97,8 +113,7 @@ export async function insertUser(
       );
     }
 
-    console.error('[auth.repository] insert failed', error);
-    throw toDatabaseUnavailable();
+    throw toDatabaseUnavailable(error);
   }
 
   return {
@@ -115,22 +130,24 @@ export async function insertUserPreferences(
 ): Promise<void> {
   const client = getSupabaseClient();
 
-  const preferences = await client.from('user_preferences').insert({ user_id: userId });
+  const preferences = await runQuery('insertUserPreferences', () =>
+    client.from('user_preferences').insert({ user_id: userId }),
+  );
   if (preferences.error) {
-    console.error('[auth.repository] preferences insert failed', preferences.error);
-    throw toDatabaseUnavailable();
+    throw toDatabaseUnavailable(preferences.error);
   }
 
-  const categories = await client.from('user_preference_categories').insert(
-    categoryIds.map((categoryId) => ({
-      user_id: userId,
-      category_id: categoryId,
-    })),
+  const categories = await runQuery('insertPreferenceCategories', () =>
+    client.from('user_preference_categories').insert(
+      categoryIds.map((categoryId) => ({
+        user_id: userId,
+        category_id: categoryId,
+      })),
+    ),
   );
 
   if (categories.error) {
-    console.error('[auth.repository] preference categories insert failed', categories.error);
-    throw toDatabaseUnavailable();
+    throw toDatabaseUnavailable(categories.error);
   }
 }
 

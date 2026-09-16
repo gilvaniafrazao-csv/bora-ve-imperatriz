@@ -84,7 +84,17 @@ export async function loginUser(body: unknown): Promise<{ user: PublicUser; toke
     throw invalidCredentials();
   }
 
-  const passwordOk = await bcrypt.compare(input.password, row.password_hash);
+  if (!row?.password_hash) {
+    throw invalidCredentials();
+  }
+
+  let passwordOk = false;
+  try {
+    passwordOk = await bcrypt.compare(input.password, row.password_hash);
+  } catch (error) {
+    console.error('[auth.login] bcrypt.compare failed', error);
+    throw invalidCredentials();
+  }
   if (!passwordOk) {
     throw invalidCredentials();
   }
