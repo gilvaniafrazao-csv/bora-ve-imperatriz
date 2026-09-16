@@ -7,11 +7,31 @@ import { authRouter } from './modules/auth/auth.routes';
 import { healthRouter } from './modules/health/health.routes';
 import { errorHandler, notFoundHandler } from './shared/http/errorHandler';
 
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) {
+    return true;
+  }
+  if (env.corsOrigin.includes(origin)) {
+    return true;
+  }
+  try {
+    return new URL(origin).hostname.endsWith('.vercel.app');
+  } catch {
+    return false;
+  }
+}
+
 export function createApp(): Application {
   const app = express();
 
   app.use(helmet());
-  app.use(cors({ origin: env.corsOrigin }));
+  app.use(
+    cors({
+      origin(origin, callback) {
+        callback(null, isAllowedOrigin(origin));
+      },
+    }),
+  );
   app.use(express.json());
   app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
 

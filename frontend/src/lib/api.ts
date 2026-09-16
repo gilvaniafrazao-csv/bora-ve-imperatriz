@@ -1,6 +1,6 @@
 import type { ApiErrorBody } from "@/types/user";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333").replace(/\/+$/, "");
 
 export class ApiError extends Error {
   readonly status: number;
