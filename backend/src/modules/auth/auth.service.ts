@@ -1,14 +1,17 @@
+import { createHmac } from 'node:crypto';
 import bcrypt from 'bcrypt';
+import { env } from '../../config/env';
 import { AppError } from '../../shared/errors/AppError';
 import {
   deleteUserById,
+  findAuthUserByEmail,
   findCategoryIdsBySlugs,
   findUserIdByEmail,
   insertUser,
   insertUserPreferences,
 } from './auth.repository';
 import { PublicUser } from './auth.types';
-import { parseRegisterBody } from './auth.validation';
+import { parseLoginBody, parseRegisterBody } from './auth.validation';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -40,4 +43,59 @@ export async function registerUser(body: unknown): Promise<PublicUser> {
   }
 
   return user;
+}
+
+const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
+
+function invalidCredentials(): AppError {
+  return new AppError('E-mail ou senha inválidos.', 401, 'INVALID_CREDENTIALS');
+}
+
+function requireJwtSecret(): string {
+  if (!env.jwtSecret) {
+    throw new AppError(
+      'Não foi possível entrar. Tente novamente mais tarde.',
+      503,
+      'AUTH_MISCONFIGURED',
+    );
+  }
+  return env.jwtSecret;
+}
+
+function signAccessToken(userId: string): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const payload = Buffer.from(
+    JSON.stringify({ sub: userId, iat: now, exp: now + TOKEN_TTL_SECONDS }),
+  ).toString('base64url');
+  const signature = createHmac('sha256', requireJwtSecret())
+    .update(`${header}.${payload}`)
+    .digest('base64url');
+  return `${header}.${payload}.${signature}`;
+}
+
+/**
+ * Autentica um usuário comum (RF02) e devolve um JWT da aplicação.
+ */
+export async function loginUser(body: unknown): Promise<{ user: PublicUser; token: string }> {
+  const input = parseLoginBody(body);
+  const row = await findAuthUserByEmail(input.email);
+  if (!row) {
+    throw invalidCredentials();
+  }
+
+  const passwordOk = await bcrypt.compare(input.password, row.password_hash);
+  if (!passwordOk) {
+    throw invalidCredentials();
+  }
+
+  return {
+    user: {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      createdAt: row.created_at,
+    },
+    token: signAccessToken(row.id),
+  };
 }

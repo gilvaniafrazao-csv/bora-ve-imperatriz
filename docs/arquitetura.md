@@ -40,7 +40,7 @@ Infra compartilhada fica fora dos módulos:
 - `shared/errors` — `AppError`
 - `shared/http` — `asyncHandler`, `errorHandler`
 
-Não force todas as camadas em todo módulo. Health só tem rota. Login futuro reutiliza `modules/auth`.
+Não force todas as camadas em todo módulo. Health só tem rota. Login reutiliza `modules/auth` (`POST /api/auth/login`).
 
 ### Onde colocar uma feature nova
 
@@ -55,7 +55,7 @@ Stack: **Next.js 16**, **React 19**, **Tailwind CSS v4**. Estilo vai nas classes
 
 | Pasta | Uso |
 | --- | --- |
-| `app/` | Rotas, páginas e UI daquela tela (ex.: `cadastro/register-form.tsx`) |
+| `app/` | Rotas, páginas e UI daquela tela (ex.: `cadastro/register-form.tsx`, `login/login-form.tsx`) |
 | `lib/` | Client HTTP (`api.ts`) e chamadas de domínio (`auth.ts`) |
 | `types/` | Tipos compartilhados (`PublicUser`) |
 | `components/` | UI reutilizável (botão, input) quando surgir |

@@ -4,7 +4,7 @@ import {
   OnboardingCategorySlug,
   isOnboardingCategorySlug,
 } from './onboarding-categories';
-import { FieldError, RegisterInput } from './auth.types';
+import { FieldError, LoginInput, RegisterInput } from './auth.types';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -109,4 +109,34 @@ function parseCategorySlugs(
   }
 
   return unique;
+}
+
+/**
+ * Valida o corpo de POST /api/auth/login (RF02).
+ */
+export function parseLoginBody(body: unknown): LoginInput {
+  const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+  const errors: FieldError[] = [];
+
+  const emailRaw = asTrimmedString(payload.email);
+  const password = typeof payload.password === 'string' ? payload.password : null;
+
+  if (!emailRaw) {
+    errors.push({ field: 'email', message: 'Informe o e-mail.' });
+  } else if (!EMAIL_REGEX.test(emailRaw) || emailRaw.length > 254) {
+    errors.push({ field: 'email', message: 'Informe um e-mail válido.' });
+  }
+
+  if (password === null || password.length === 0) {
+    errors.push({ field: 'password', message: 'Informe a senha.' });
+  }
+
+  if (errors.length > 0) {
+    throw new AppError('Dados inválidos para login.', 400, 'VALIDATION_ERROR', errors);
+  }
+
+  return {
+    email: (emailRaw as string).toLowerCase(),
+    password: password as string,
+  };
 }

@@ -58,7 +58,7 @@ backend/src/
 ├── shared/                # erros e HTTP comuns
 └── modules/
     ├── health/            # GET /health
-    └── auth/              # POST /api/auth/register
+    └── auth/              # POST /api/auth/register e POST /api/auth/login
 ```
 
 Arquitetura completa: [`docs/arquitetura.md`](../docs/arquitetura.md).
@@ -93,3 +93,26 @@ Resposta `201`:
 ```
 
 A senha é gravada só como hash bcrypt. É obrigatório enviar **pelo menos 3** categorias da tela de preferências (`sushi`, `pizza`, `hamburguer`, `bar`, `churrasco`, `doces`). E-mail duplicado retorna `409`. Campos inválidos retornam `400` com `error.details`.
+
+## Login (RF02)
+
+`POST /api/auth/login`
+
+```json
+{
+  "email": "ana@example.com",
+  "password": "senhaSegura"
+}
+```
+
+Resposta `200`:
+
+```json
+{
+  "message": "Login realizado com sucesso.",
+  "user": { "id": "...", "name": "Ana", "email": "ana@example.com", "createdAt": "..." },
+  "token": "eyJ..."
+}
+```
+
+E-mail ou senha inválidos retornam `401` com o código `INVALID_CREDENTIALS`. O token é um JWT HS256 (7 dias) assinado com `JWT_SECRET`.

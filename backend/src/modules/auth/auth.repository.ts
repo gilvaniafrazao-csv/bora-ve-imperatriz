@@ -1,6 +1,6 @@
 import { getSupabaseClient } from '../../config/supabase';
 import { AppError } from '../../shared/errors/AppError';
-import { PublicUser, RegisterInput, UserRow } from './auth.types';
+import { AuthUserRow, PublicUser, RegisterInput, UserRow } from './auth.types';
 import { OnboardingCategorySlug } from './onboarding-categories';
 
 function isUniqueViolation(error: { code?: string; message?: string } | null): boolean {
@@ -33,6 +33,20 @@ export async function findUserIdByEmail(email: string): Promise<string | null> {
   }
 
   return data?.id ?? null;
+}
+
+export async function findAuthUserByEmail(email: string): Promise<AuthUserRow | null> {
+  const { data, error } = await getSupabaseClient()
+    .from('users')
+    .select('id, name, email, created_at, password_hash')
+    .ilike('email', email)
+    .maybeSingle<AuthUserRow>();
+
+  if (error) {
+    throw toDatabaseUnavailable();
+  }
+
+  return data ?? null;
 }
 
 export async function findCategoryIdsBySlugs(

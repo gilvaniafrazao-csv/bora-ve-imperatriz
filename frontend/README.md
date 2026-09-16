@@ -24,7 +24,7 @@ App Next.js do Bora Vê Imperatriz.
    ```bash
    npm run dev
    ```
-4. Acesse `http://localhost:3000` — o cadastro está em `/cadastro` (dados + preferências).
+4. Acesse `http://localhost:3000` — o cadastro está em `/cadastro` (dados + preferências) e o login em `/login`.
 
 ## Estrutura
 
