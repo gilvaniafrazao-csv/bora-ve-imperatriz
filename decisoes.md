@@ -21,6 +21,14 @@ A lacuna L01 (criação de conta) foi fechada para o MVP das telas de CADASTRO:
 - **Fora deste endpoint:** OAuth (Apple/Google/Facebook do protótipo) e papéis de proprietário/admin.
 - **Contrato:** `POST /api/auth/register`. E-mail único (case-insensitive). Senha com no mínimo 8 caracteres, persistida só como hash bcrypt (RNF05). Confirmação da conta = resposta `201`.
 
+## 16/09/2026 — Preferências no cadastro (RF03)
+
+A conta só é criada no segundo “Bora lá!”, depois de escolher **pelo menos 3** categorias da tela de preferências (`sushi`, `pizza`, `hamburguer`, `bar`, `churrasco`, `doces`). O `POST /api/auth/register` passa a receber `categorySlugs` e grava `user_preferences` + `user_preference_categories`. OAuth continua fora.
+
 ## 14/09/2026 — Arquitetura em módulos
 
-Backend organizado por funcionalidade (`src/modules/<feature>`), com camadas `routes → controller → service → repository`. Infra comum em `config/` e `shared/`. Frontend: páginas em `app/`, fluxos em `features/`, HTTP em `lib/api`. Detalhes em `docs/arquitetura.md`.
+Backend organizado por funcionalidade (`src/modules/<feature>`), com camadas `routes → controller → service → repository`. Infra comum em `config/` e `shared/`. Frontend: Next.js App Router com UI colocada na rota, Tailwind v4 e HTTP em `lib/`. Detalhes em `docs/arquitetura.md`.
+
+## 14/09/2026 — Frontend com Tailwind
+
+O CSS Modules e a pasta `features/` saíram do frontend. UI fica junto da rota (`app/cadastro`), estilo em Tailwind v4 (`@theme` em `globals.css`), chamadas HTTP em `lib/api.ts` e `lib/auth.ts`. O visual aprovado do cadastro (radial no verde, painel `#FEEFDD`, Poppins) permanece.

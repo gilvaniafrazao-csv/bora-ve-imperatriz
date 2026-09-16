@@ -49,16 +49,19 @@ Não force todas as camadas em todo módulo. Health só tem rota. Login futuro r
 3. Lançar `AppError` no serviço/validação — nunca `Error` cru para regra de negócio
 4. Senha e dados sensíveis não saem do serviço/repositório
 
-## Frontend — App Router + features
+## Frontend — App Router + Tailwind
+
+Stack: **Next.js 16**, **React 19**, **Tailwind CSS v4**. Estilo vai nas classes do componente; não usamos CSS Modules.
 
 | Pasta | Uso |
 | --- | --- |
-| `app/` | Páginas e rotas (`/cadastro`, `/login`) |
-| `features/<domínio>/` | API e componentes daquela tela/fluxo |
-| `lib/api/` | Client HTTP único para o backend |
-| `components/` | UI reutilizável (botão, input) quando surgir |
+| `app/` | Rotas, páginas e UI daquela tela (ex.: `cadastro/register-form.tsx`) |
+| `lib/` | Client HTTP (`api.ts`) e chamadas de domínio (`auth.ts`) |
 | `types/` | Tipos compartilhados (`PublicUser`) |
+| `components/` | UI reutilizável (botão, input) quando surgir |
 
-Telas em `app/` devem ser finas: layout + chamar o que está em `features/`.
+A página em `app/` fica fina. O formulário client fica ao lado, na mesma pasta da rota.
+
+Tokens de marca (`teal`, `lime`, `peach`) estão em `app/globals.css` (`@theme`).
 
 `NEXT_PUBLIC_API_URL` aponta para o Express (`http://localhost:3333` no desenvolvimento).
