@@ -1,4 +1,9 @@
 import { AppError } from '../../shared/errors/AppError';
+import {
+  MIN_ONBOARDING_CATEGORIES,
+  OnboardingCategorySlug,
+  isOnboardingCategorySlug,
+} from './onboarding-categories';
 import { FieldError, RegisterInput } from './auth.types';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,8 +20,8 @@ function asTrimmedString(value: unknown): string | null {
 }
 
 /**
- * Valida o corpo de POST /api/auth/register (RF01).
- * Campos alinhados à tela de CADASTRO: nome, e-mail e senha.
+ * Valida o corpo de POST /api/auth/register (RF01 + RF03).
+ * Campos da tela de CADASTRO + pelo menos 3 categorias da tela de PREFERÊNCIAS.
  */
 export function parseRegisterBody(body: unknown): RegisterInput {
   const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
@@ -25,6 +30,7 @@ export function parseRegisterBody(body: unknown): RegisterInput {
   const name = asTrimmedString(payload.name);
   const emailRaw = asTrimmedString(payload.email);
   const password = typeof payload.password === 'string' ? payload.password : null;
+  const categorySlugs = parseCategorySlugs(payload.categorySlugs, errors);
 
   if (!name) {
     errors.push({ field: 'name', message: 'Informe como podemos te chamar.' });
@@ -62,5 +68,45 @@ export function parseRegisterBody(body: unknown): RegisterInput {
     name: name as string,
     email: (emailRaw as string).toLowerCase(),
     password: password as string,
+    categorySlugs,
   };
+}
+
+function parseCategorySlugs(
+  value: unknown,
+  errors: FieldError[],
+): RegisterInput['categorySlugs'] {
+  if (!Array.isArray(value)) {
+    errors.push({
+      field: 'categorySlugs',
+      message: `Escolha pelo menos ${MIN_ONBOARDING_CATEGORIES} categorias.`,
+    });
+    return [];
+  }
+
+  const unique: OnboardingCategorySlug[] = [];
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      errors.push({ field: 'categorySlugs', message: 'Categorias inválidas.' });
+      return [];
+    }
+    const slug = item.trim().toLowerCase();
+    if (!isOnboardingCategorySlug(slug)) {
+      errors.push({ field: 'categorySlugs', message: 'Uma ou mais categorias não são válidas.' });
+      return [];
+    }
+    if (!unique.includes(slug)) {
+      unique.push(slug);
+    }
+  }
+
+  if (unique.length < MIN_ONBOARDING_CATEGORIES) {
+    errors.push({
+      field: 'categorySlugs',
+      message: `Escolha pelo menos ${MIN_ONBOARDING_CATEGORIES} categorias.`,
+    });
+    return [];
+  }
+
+  return unique;
 }
