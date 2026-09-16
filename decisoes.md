@@ -25,6 +25,10 @@ A lacuna L01 (criação de conta) foi fechada para o MVP das telas de CADASTRO:
 
 A conta só é criada no segundo “Bora lá!”, depois de escolher **pelo menos 3** categorias da tela de preferências (`sushi`, `pizza`, `hamburguer`, `bar`, `churrasco`, `doces`). O `POST /api/auth/register` passa a receber `categorySlugs` e grava `user_preferences` + `user_preference_categories`. OAuth continua fora.
 
+## 16/09/2026 — Login de usuário comum (RF02)
+
+`POST /api/auth/login` recebe e-mail e senha, compara com `password_hash` (bcrypt) e devolve o usuário público + JWT assinado com `JWT_SECRET` (HS256, 7 dias). Credenciais erradas retornam `401 INVALID_CREDENTIALS` sem dizer se o e-mail existe. OAuth e recuperação de senha continuam “em breve”. A tela `/login` espelha o cadastro (split, radial, peach `#FEEFDD`), com o formulário à esquerda.
+
 ## 14/09/2026 — Arquitetura em módulos
 
 Backend organizado por funcionalidade (`src/modules/<feature>`), com camadas `routes → controller → service → repository`. Infra comum em `config/` e `shared/`. Frontend: Next.js App Router com UI colocada na rota, Tailwind v4 e HTTP em `lib/`. Detalhes em `docs/arquitetura.md`.

@@ -19,3 +19,27 @@ export function registerUser(payload: RegisterPayload) {
     body: JSON.stringify(payload),
   });
 }
+
+export type LoginPayload = {
+  email: string;
+  password: string;
+};
+
+export type LoginResponse = {
+  message: string;
+  user: PublicUser;
+  token: string;
+};
+
+const AUTH_TOKEN_KEY = "bora-ve-token";
+
+export function loginUser(payload: LoginPayload) {
+  return apiRequest<LoginResponse>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function saveAuthToken(token: string) {
+  window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+}

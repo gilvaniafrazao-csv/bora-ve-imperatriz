@@ -7,6 +7,11 @@ export type RegisterInput = {
   categorySlugs: OnboardingCategorySlug[];
 };
 
+export type LoginInput = {
+  email: string;
+  password: string;
+};
+
 export type PublicUser = {
   id: string;
   name: string;
@@ -24,4 +29,8 @@ export type UserRow = {
   name: string;
   email: string;
   created_at: string;
+};
+
+export type AuthUserRow = UserRow & {
+  password_hash: string;
 };
