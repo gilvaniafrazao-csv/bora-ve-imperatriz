@@ -1,13 +1,13 @@
-# BV — Frontend (setup inicial)
+# BV — Frontend
 
-Estrutura inicial do projeto frontend, referente à task **TASK-BV-INFRA-04**.
+App Next.js do Bora Vê Imperatriz.
 
 ## Stack
 
 - Next.js 16 (App Router)
-- TypeScript
 - React 19
-- CSS normal (CSS Modules, sem framework de CSS)
+- TypeScript
+- Tailwind CSS v4
 
 ## Requisitos
 
@@ -15,36 +15,25 @@ Estrutura inicial do projeto frontend, referente à task **TASK-BV-INFRA-04**.
 
 ## Como usar
 
-1. Copie todos os arquivos desta pasta para dentro da pasta `frontend/` do repositório do time.
-2. Instale as dependências:
+1. Instale as dependências:
    ```bash
    npm install
    ```
+2. Copie `.env.example` para `.env.local` e ajuste `NEXT_PUBLIC_API_URL` se a API não estiver em `http://localhost:3333`.
 3. Rode localmente:
    ```bash
    npm run dev
    ```
-4. Acesse `http://localhost:3000` — se aparecer a página "Projeto BV — Setup inicial", o primeiro critério de aceite está atendido.
+4. Acesse `http://localhost:3000` — o cadastro está em `/cadastro` (dados + preferências).
 
 ## Estrutura
 
 ```
 src/
-  app/                 → páginas e rotas (App Router)
-  features/<domínio>/  → API e UI de um fluxo (ex.: auth)
-  lib/api/             → client HTTP do backend
-  types/               → tipos compartilhados
-  components/          → UI reutilizável (quando surgir)
+  app/           → rotas, páginas e UI da tela
+  lib/           → client HTTP e chamadas de auth
+  types/         → tipos compartilhados
 ```
 
+Tokens de cor e fonte: `src/app/globals.css` (`@theme`).
 Arquitetura completa: [`docs/arquitetura.md`](../docs/arquitetura.md).
-
-Copie `.env.example` para `.env.local` e ajuste `NEXT_PUBLIC_API_URL` se a API não estiver em `http://localhost:3333`.
-
-## Pendências (próximas tasks)
-
-- Telas de cadastro/login em `app/` usando `features/auth`.
-
-## Nota de segurança
-
-Esse setup usa Next.js 16.3.4 (versão mais recente disponível), pois a linha 14.x não recebe mais correções de segurança da Vercel.

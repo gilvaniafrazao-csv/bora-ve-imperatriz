@@ -1,7 +1,10 @@
+import { OnboardingCategorySlug } from './onboarding-categories';
+
 export type RegisterInput = {
   name: string;
   email: string;
   password: string;
+  categorySlugs: OnboardingCategorySlug[];
 };
 
 export type PublicUser = {

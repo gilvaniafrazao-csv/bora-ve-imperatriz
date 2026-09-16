@@ -70,7 +70,7 @@ Arquitetura completa: [`docs/arquitetura.md`](../docs/arquitetura.md).
 - **Senhas (RNF05):** hash bcrypt no serviço; o repositório só persiste `password_hash`.
 - **Banco:** somente nos `*.repository.ts`, via `getSupabaseClient()` (Service Role no backend).
 
-## Cadastro (RF01)
+## Cadastro (RF01 + RF03)
 
 `POST /api/auth/register`
 
@@ -78,7 +78,8 @@ Arquitetura completa: [`docs/arquitetura.md`](../docs/arquitetura.md).
 {
   "name": "Ana",
   "email": "ana@example.com",
-  "password": "senhaSegura"
+  "password": "senhaSegura",
+  "categorySlugs": ["sushi", "pizza", "bar"]
 }
 ```
 
@@ -91,4 +92,4 @@ Resposta `201`:
 }
 ```
 
-A senha é gravada só como hash bcrypt. E-mail duplicado retorna `409`. Campos inválidos retornam `400` com `error.details`.
+A senha é gravada só como hash bcrypt. É obrigatório enviar **pelo menos 3** categorias da tela de preferências (`sushi`, `pizza`, `hamburguer`, `bar`, `churrasco`, `doces`). E-mail duplicado retorna `409`. Campos inválidos retornam `400` com `error.details`.
