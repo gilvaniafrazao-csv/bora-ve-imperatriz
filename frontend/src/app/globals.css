@@ -1,9 +1,41 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+
+  --color-teal: #0c4651;
+  --color-teal-10: #cedad0;
+  --color-teal-20: #aec1c5;
+  --color-teal-30: #8ba3a8;
+  --color-teal-40: #5d8b98;
+  --color-teal-50: #34656e;
+  --color-teal-60: #0a3a44;
+  --color-teal-70: #082f36;
+  --color-teal-80: #062329;
+  --color-teal-90: #04171b;
+
+  --color-lime: #e6ff2a;
+  --color-peach: #feefdd;
+  --color-ink: #201e1f;
+  --color-danger: #871b1b;
+  --color-placeholder: #9bb0b3;
+  --color-step: #c5d4d6;
+  --color-chip: #d3ecee;
+}
+
+@utility bg-brand-radial {
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    var(--color-teal-50) 23%,
+    var(--color-teal) 100%
+  );
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  @apply min-h-dvh bg-peach font-sans text-ink antialiased;
 }
