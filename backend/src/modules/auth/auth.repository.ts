@@ -15,20 +15,28 @@ function isUniqueViolation(error: { code?: string; message?: string } | null): b
 
 function toDatabaseUnavailable(): AppError {
   return new AppError(
-    'Não foi possível concluir o cadastro. Tente novamente mais tarde.',
+    'Não foi possível concluir a operação. Tente novamente mais tarde.',
     503,
     'DATABASE_UNAVAILABLE',
   );
 }
 
+async function runQuery<T>(label: string, operation: () => PromiseLike<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    console.error(`[auth.repository] ${label} threw`, error);
+    throw toDatabaseUnavailable();
+  }
+}
+
 export async function findUserIdByEmail(email: string): Promise<string | null> {
-  const { data, error } = await getSupabaseClient()
-    .from('users')
-    .select('id')
-    .ilike('email', email)
-    .maybeSingle<{ id: string }>();
+  const { data, error } = await runQuery('findUserIdByEmail', () =>
+    getSupabaseClient().from('users').select('id').ilike('email', email).maybeSingle<{ id: string }>(),
+  );
 
   if (error) {
+    console.error('[auth.repository] findUserIdByEmail failed', error);
     throw toDatabaseUnavailable();
   }
 
@@ -36,13 +44,16 @@ export async function findUserIdByEmail(email: string): Promise<string | null> {
 }
 
 export async function findAuthUserByEmail(email: string): Promise<AuthUserRow | null> {
-  const { data, error } = await getSupabaseClient()
-    .from('users')
-    .select('id, name, email, created_at, password_hash')
-    .ilike('email', email)
-    .maybeSingle<AuthUserRow>();
+  const { data, error } = await runQuery('findAuthUserByEmail', () =>
+    getSupabaseClient()
+      .from('users')
+      .select('id, name, email, created_at, password_hash')
+      .ilike('email', email)
+      .maybeSingle<AuthUserRow>(),
+  );
 
   if (error) {
+    console.error('[auth.repository] findAuthUserByEmail failed', error);
     throw toDatabaseUnavailable();
   }
 
@@ -52,10 +63,9 @@ export async function findAuthUserByEmail(email: string): Promise<AuthUserRow | 
 export async function findCategoryIdsBySlugs(
   slugs: OnboardingCategorySlug[],
 ): Promise<string[]> {
-  const { data, error } = await getSupabaseClient()
-    .from('categories')
-    .select('id, slug')
-    .in('slug', slugs);
+  const { data, error } = await runQuery('findCategoryIdsBySlugs', () =>
+    getSupabaseClient().from('categories').select('id, slug').in('slug', slugs),
+  );
 
   if (error || !data) {
     throw toDatabaseUnavailable();
