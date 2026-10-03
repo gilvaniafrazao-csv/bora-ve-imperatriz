@@ -58,7 +58,8 @@ backend/src/
 ├── shared/                # erros e HTTP comuns
 └── modules/
     ├── health/            # GET /health
-    └── auth/              # POST /api/auth/register e POST /api/auth/login
+    ├── auth/              # POST /api/auth/register e POST /api/auth/login
+    └── preferences/       # GET e PUT /api/preferences (autenticado)
 ```
 
 Arquitetura completa: [`docs/arquitetura.md`](../docs/arquitetura.md).
@@ -116,3 +117,41 @@ Resposta `200`:
 ```
 
 E-mail ou senha inválidos retornam `401` com o código `INVALID_CREDENTIALS`. O token é um JWT HS256 (7 dias) assinado com `JWT_SECRET`.
+
+## Preferências (RF03)
+
+Rotas autenticadas: envie `Authorization: Bearer <token>` (o `token` do login). Sem token, token inválido ou expirado retornam `401 UNAUTHORIZED`.
+
+### `PUT /api/preferences` — registrar / editar
+
+Substitui o conjunto de categorias do usuário (serve para o onboarding e para a edição posterior).
+
+```json
+{
+  "categorySlugs": ["sushi", "pizza", "bar"],
+  "priceRange": "moderado"
+}
+```
+
+- `categorySlugs` (obrigatório): pelo menos **3** entre `sushi`, `pizza`, `hamburguer`, `bar`, `churrasco`, `doces`. Duplicados são ignorados.
+- `priceRange` (opcional): `economico` | `moderado` | `premium`. Ausente mantém o valor atual; `null` limpa.
+
+Resposta `200`:
+
+```json
+{
+  "message": "Preferências salvas com sucesso.",
+  "preferences": {
+    "categorySlugs": ["bar", "pizza", "sushi"],
+    "priceRange": "moderado",
+    "onboardingCompleted": true,
+    "updatedAt": "..."
+  }
+}
+```
+
+Campos inválidos retornam `400 VALIDATION_ERROR` com `error.details`.
+
+### `GET /api/preferences` — consultar
+
+Resposta `200` com `{ "preferences": { ... } }` no mesmo formato acima. Usuário que ainda não escolheu nada recebe `categorySlugs: []`, `priceRange: null` e `onboardingCompleted: false` (não é erro). `categorySlugs` vem ordenado por slug para a resposta ser estável; é essa lista que o motor de recomendação deve consumir.

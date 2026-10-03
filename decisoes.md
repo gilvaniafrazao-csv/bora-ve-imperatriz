@@ -29,6 +29,15 @@ A conta só é criada no segundo “Bora lá!”, depois de escolher **pelo meno
 
 `POST /api/auth/login` recebe e-mail e senha, compara com `password_hash` (bcrypt) e devolve o usuário público + JWT assinado com `JWT_SECRET` (HS256, 7 dias). Credenciais erradas retornam `401 INVALID_CREDENTIALS` sem dizer se o e-mail existe. OAuth e recuperação de senha continuam “em breve”. A tela `/login` espelha o cadastro (split, radial, peach `#FEEFDD`), com o formulário à esquerda.
 
+## 03/10/2026 — Endpoints de preferências (TASK-BV-PREF-02)
+
+`GET /api/preferences` e `PUT /api/preferences`, ambos exigem `Authorization: Bearer <JWT>`:
+
+- **`PUT` substitui o conjunto de categorias** (mínimo 3, mesmas 6 do onboarding) em vez de ter rotas separadas de criar/editar; isso já atende a edição da PREF-04. `priceRange` é opcional (`null` limpa, ausente mantém).
+- **Sem transação.** O client do Supabase não expõe transações; o repositório grava as categorias novas antes de remover as que saíram, para uma falha no meio nunca deixar o usuário com menos do que tinha.
+- **`requireAuth` mínimo** (`shared/http/requireAuth.ts` + `shared/auth/jwt.ts`) valida assinatura HS256 e expiração do JWT. Foi criado aqui porque a PREF-02 depende dele; a AUTH-06 (autorização por papel) deve estender, não reescrever.
+- **Consulta sem onboarding não é erro:** devolve lista vazia e `onboardingCompleted: false`.
+
 ## 14/09/2026 — Arquitetura em módulos
 
 Backend organizado por funcionalidade (`src/modules/<feature>`), com camadas `routes → controller → service → repository`. Infra comum em `config/` e `shared/`. Frontend: Next.js App Router com UI colocada na rota, Tailwind v4 e HTTP em `lib/`. Detalhes em `docs/arquitetura.md`.
