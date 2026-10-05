@@ -38,6 +38,15 @@ A conta só é criada no segundo “Bora lá!”, depois de escolher **pelo meno
 - **`requireAuth` mínimo** (`shared/http/requireAuth.ts` + `shared/auth/jwt.ts`) valida assinatura HS256 e expiração do JWT. Foi criado aqui porque a PREF-02 depende dele; a AUTH-06 (autorização por papel) deve estender, não reescrever.
 - **Consulta sem onboarding não é erro:** devolve lista vazia e `onboardingCompleted: false`.
 
+## 05/10/2026 — Testes de preferências (TASK-BV-PREF-05)
+
+A issue pede testar "persistência/uso conforme definido no refinamento", mas o refinamento não está documentado no repositório. Interpretação adotada (**a confirmar com o time**):
+
+- **Runner:** `node:test` via `tsx` (`npm test`), sem dependências novas.
+- **Banco nos testes:** Supabase falso em memória (`backend/tests/helpers/fakeSupabase.ts`). Dá testes rápidos e sem credenciais (serve para CI), mas **não** simula RLS, constraints nem triggers; isso continua exigindo teste manual contra o Supabase real.
+- **"Persistência":** o que foi salvo é devolvido pelo `GET`, a edição substitui o conjunto, o `PUT` é idempotente e uma falha no meio não apaga as categorias antigas.
+- **"Uso nas recomendações":** o contrato do `GET /api/preferences` (slugs ordenados, `priceRange`, `onboardingCompleted`) é o que a HOME-03 deve consumir; está coberto por testes.
+
 ## 14/09/2026 — Arquitetura em módulos
 
 Backend organizado por funcionalidade (`src/modules/<feature>`), com camadas `routes → controller → service → repository`. Infra comum em `config/` e `shared/`. Frontend: Next.js App Router com UI colocada na rota, Tailwind v4 e HTTP em `lib/`. Detalhes em `docs/arquitetura.md`.

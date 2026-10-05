@@ -46,7 +46,8 @@ Resposta esperada:
 | `npm run build`     | Compila TypeScript para `dist/`                 |
 | `npm start`         | Roda a versão compilada (`dist/server.js`)      |
 | `npm run lint`      | Executa o ESLint                                |
-| `npm run typecheck` | Verifica tipos sem gerar build                  |
+| `npm run typecheck` | Verifica tipos (src + tests) sem gerar build    |
+| `npm test`          | Roda os testes automatizados (`tests/`)         |
 
 ## Estrutura de pastas
 
@@ -70,6 +71,22 @@ Arquitetura completa: [`docs/arquitetura.md`](../docs/arquitetura.md).
 - **Erros:** lance `AppError` — o `errorHandler` converte para `{ "error": { "code", "message" } }`.
 - **Senhas (RNF05):** hash bcrypt no serviço; o repositório só persiste `password_hash`.
 - **Banco:** somente nos `*.repository.ts`, via `getSupabaseClient()` (Service Role no backend).
+
+## Testes
+
+```bash
+npm test
+```
+
+Usa o test runner nativo do Node (`node:test`) via `tsx`, sem dependências extras e **sem precisar de Supabase nem de `.env`**: os testes sobem a API real contra um Supabase/PostgREST falso em memória (`tests/helpers/fakeSupabase.ts`).
+
+| Arquivo | O que cobre |
+| --- | --- |
+| `tests/validation.test.ts` | Validação da seleção de interesses (cadastro e preferências) e do JWT |
+| `tests/preferences.api.test.ts` | `GET`/`PUT /api/preferences`: autenticação, registro, consulta, edição, isolamento entre usuários e falhas do banco |
+| `tests/onboarding.api.test.ts` | Fluxo cadastro com interesses → login → consulta/edição, e rollback do cadastro |
+
+Para simular falha do banco num teste: `ctx.fake.failNext('POST', 'user_preferences')`. O fake só entende as consultas usadas hoje; se um módulo novo usar outra, estenda o `fakeSupabase.ts`. Ele **não** substitui um teste manual contra o Supabase real (RLS, constraints e triggers não são simulados).
 
 ## Cadastro (RF01 + RF03)
 
