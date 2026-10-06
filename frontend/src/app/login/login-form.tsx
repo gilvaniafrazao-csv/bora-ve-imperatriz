@@ -3,6 +3,7 @@
 import { FormEvent, ReactNode, useState } from "react";
 import Link from "next/link";
 import { loginUser, saveAuthToken } from "@/lib/auth";
+import { Eye, EyeOff } from "lucide-react";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -138,33 +139,31 @@ export function LoginForm() {
       </header>
 
       {/* CONTEÚDO */}
-      <section className="flex-1 flex items-center justify-center px-4 py-10 md:py-12">
+      <section className="flex-1 flex items-center justify-center px-4 py-6 lg:py-12">
         <div
           className="
             w-full
             max-w-[1000px]
-            min-h-[500px]
+            lg:min-h-[500px]
             bg-white
             rounded-[15px]
             shadow-[0_18px_45px_rgba(20,50,55,0.12)]
             overflow-hidden
             flex
             flex-col
-            md:flex-row
+            lg:flex-row
           "
         >
           {/* PAINEL ESQUERDO */}
           <div
             className="
               relative
-              w-full
-              md:w-[43%]
+              hidden
+              lg:flex
+              lg:w-[43%]
               bg-[#0b3f45]
               px-7
               py-7
-              md:px-7
-              md:py-7
-              flex
               flex-col
               overflow-hidden
             "
@@ -314,12 +313,13 @@ export function LoginForm() {
           <div
             className="
               w-full
-              md:w-[57%]
+              lg:w-[57%]
               bg-[#fffefa]
-              px-7
+              px-5
               py-7
-              md:px-8
-              md:py-7
+              sm:px-7
+              lg:px-8
+              lg:py-7
               flex
               flex-col
             "
@@ -551,7 +551,11 @@ export function LoginForm() {
                           transition-colors
                         "
                     >
-                      {showPassword ? <EyeIcon /> : <EyeOffIcon />}
+                      {showPassword ? (
+                        <Eye size={16} strokeWidth={1.8} />
+                      ) : (
+                        <EyeOff size={16} strokeWidth={1.8} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -632,45 +636,6 @@ export function LoginForm() {
   );
 }
 
-function EyeIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
-      <circle cx="12" cy="12" r="2.5" />
-    </svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 3l18 18" />
-      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-      <path d="M9.9 5.2A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-3.1 3.9" />
-      <path d="M6.2 6.2C3.6 8.1 2 12 2 12s3.5 7 10 7c1 0 1.9-.1 2.7-.4" />
-    </svg>
-  );
-}
 function StatusOverlay({
   type,
   title,

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Mail } from "lucide-react";
 
 export function EmailEnviadoForm() {
   const searchParams = useSearchParams();
@@ -25,7 +26,7 @@ export function EmailEnviadoForm() {
       </header>
 
       {/* CONTEÚDO */}
-      <section className="flex-1 flex items-center justify-center px-4 py-10 md:py-12">
+      <section className="flex-1 flex items-center justify-center px-4 py-10 lg:py-12">
         <div
           className="
             w-full
@@ -54,26 +55,7 @@ export function EmailEnviadoForm() {
                   text-[#27b9b0]
                 "
               >
-                <svg
-                  width="27"
-                  height="27"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M4 6.5C4 5.67 4.67 5 5.5 5H18.5C19.33 5 20 5.67 20 6.5V17.5C20 18.33 19.33 19 18.5 19H5.5C4.67 19 4 18.33 4 17.5V6.5Z"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  />
-                  <path
-                    d="M5 7L12 12.5L19 7"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                < Mail size={28}/>
               </div>
             </div>
 

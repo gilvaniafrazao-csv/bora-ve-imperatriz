@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, ReactNode, useState } from "react";
 import { ApiError } from "@/lib/api";
 import { registerUser } from "@/lib/auth";
+import { Coffee, Dumbbell, Eye, EyeOff, Martini, Moon, Palette, ShoppingBag, Trees, Utensils, } from "lucide-react";
 
 const ONBOARDING_CATEGORIES = [
   { slug: "restaurantes", label: "Restaurantes", icon: "restaurantes" },
@@ -235,10 +236,10 @@ export function RegisterForm() {
       </header>
 
       {/* CONTEÚDO */}
-      <section className="flex flex-1 items-center justify-center px-4 py-8 md:py-10">
-        <div className="flex min-h-[500px] w-full max-w-[1000px] flex-col overflow-hidden rounded-[15px] bg-white shadow-[0_18px_45px_rgba(20,50,55,0.12)] md:flex-row">
+      <section className="flex flex-1 items-center justify-center px-4 py-6 lg:py-10">
+        <div className="flex w-full max-w-[1000px] flex-col overflow-hidden rounded-[15px] bg-white shadow-[0_18px_45px_rgba(20,50,55,0.12)] lg:min-h-[500px] lg:flex-row">
           {/* PAINEL ESQUERDO — MESMA IDENTIDADE DO LOGIN */}
-          <div className="relative flex w-full flex-col overflow-hidden bg-[#0b3f45] px-7 py-7 md:w-[43%] md:px-7">
+          <div className="relative hidden flex-col overflow-hidden bg-[#0b3f45] px-7 py-7 lg:flex lg:w-[43%]">
             <div className="absolute -right-12 -top-12 h-42 w-42 rounded-full border-[24px] border-[#245e49] opacity-70" />
 
             <div className="mt-2 z-10 mb-5">
@@ -291,7 +292,7 @@ export function RegisterForm() {
           </div>
 
           {/* PAINEL DIREITO */}
-          <div className="flex w-full flex-col bg-[#fffefa] px-7 py-7 md:w-[57%] md:px-8">
+          <div className="flex w-full flex-col bg-[#fffefa] px-5 py-7 sm:px-7 lg:w-[57%] lg:px-8">
             {/* CADASTRO CONCLUÍDO */}
             {createdName ? (
               <div className="flex flex-1 flex-col items-center justify-center text-center">
@@ -377,7 +378,7 @@ export function RegisterForm() {
                 </label>
 
                 {/* SENHAS */}
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2">
                   <label className="flex min-w-0 flex-col gap-1.5 text-[14px] font-bold text-[#0b3f45]">
                     <span>Senha</span>
 
@@ -401,7 +402,8 @@ export function RegisterForm() {
                         }
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#839091] hover:text-[#0b3f45]"
                       >
-                        {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                        {showPassword ? ( < EyeOff className="h-4 w-4"/>)
+                        : (< Eye className="h-4 w-4"/>)}
                       </button>
                     </div>
 
@@ -438,7 +440,8 @@ export function RegisterForm() {
                         }
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#839091] hover:text-[#0b3f45]"
                       >
-                        {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                        {showConfirmPassword ? ( < EyeOff className="h-4 w-4"/>)
+                        : (< Eye className="h-4 w-4"/>)}
                       </button>
                     </div>
                   </label>
@@ -450,7 +453,7 @@ export function RegisterForm() {
                     Requisitos da senha:
                   </p>
 
-                  <div className="mt-1.5 grid grid-cols-2 gap-1">
+                  <div className="mt-1.5 grid grid-cols-1 gap-1 sm:grid-cols-2">
                     <span
                       className={`text-[10px] ${password.length >= 8 ? "text-[#16845d]" : "text-[#8a9595]"}`}
                     >
@@ -708,144 +711,47 @@ function FieldError({ children }: { children: ReactNode }) {
   );
 }
 
-function EyeIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
-      <circle cx="12" cy="12" r="2.5" />
-    </svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 3l18 18" />
-      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-      <path d="M9.9 5.2A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-3.1 3.9" />
-      <path d="M6.2 6.2C3.6 8.1 2 12 2 12s3.5 7 10 7c1 0 1.9-.1 2.7-.4" />
-    </svg>
-  );
-}
-function CategoryIcon({ type, selected }: { type: string; selected: boolean }) {
-  const color = selected ? "currentColor" : "#788183";
-
-  const commonProps = {
-    width: 18,
-    height: 18,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: color,
-    strokeWidth: 1.8,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
-  };
+function CategoryIcon({
+  type,
+  selected,
+}: {
+  type: string;
+  selected: boolean;
+}) {
+  const className = selected
+    ? "h-[18px] w-[18px] text-current"
+    : "h-[18px] w-[18px] text-[#788183]";
 
   switch (type) {
-    case "gastronomia":
-      return (
-        <svg {...commonProps}>
-          <path d="M7 3v7" />
-          <path d="M4 3v4a3 3 0 0 0 6 0V3" />
-          <path d="M7 10v11" />
-          <path d="M16 3v18" />
-          <path d="M16 3c3 2 4 5 4 8h-4" />
-        </svg>
-      );
+    case "restaurantes":
+      return <Utensils className={className} />;
 
     case "bares":
-      return (
-        <svg {...commonProps}>
-          <path d="M5 4h14l-6 7v6" />
-          <path d="M10 21h8" />
-          <path d="M13 17h2" />
-          <path d="M8 4l2 3" />
-        </svg>
-      );
+      return <Martini className={className} />;
 
-    case "natureza":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 21V9" />
-          <path d="M12 14c-4 0-7-2-7-7 4 0 7 2 7 7Z" />
-          <path d="M12 11c0-4 3-7 7-7 0 5-3 7-7 7Z" />
-        </svg>
-      );
+    case "cafeterias":
+      return <Coffee className={className} />;
 
     case "cultura":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <circle cx="9" cy="9" r="1" />
-          <circle cx="15" cy="8" r="1" />
-          <circle cx="8" cy="14" r="1" />
-          <path d="M14 16c1.5-1 3-.5 3 1.5" />
-        </svg>
-      );
-
-    case "vida-noturna":
-      return (
-        <svg {...commonProps}>
-          <path d="M20 15.5A8 8 0 1 1 8.5 4 6.5 6.5 0 0 0 20 15.5Z" />
-          <path d="M17 4v4" />
-          <path d="M15 6h4" />
-        </svg>
-      );
-
-    case "esportes":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="m8 5 4 4 4-4" />
-          <path d="m5 16 5-1 2 6" />
-          <path d="m19 16-5-1-2 6" />
-        </svg>
-      );
+      return <Palette className={className} />;
 
     case "compras":
-      return (
-        <svg {...commonProps}>
-          <path d="M5 8h14l-1 12H6L5 8Z" />
-          <path d="M9 8V6a3 3 0 0 1 6 0v2" />
-        </svg>
-      );
+      return <ShoppingBag className={className} />;
 
-    case "eventos":
-      return (
-        <svg {...commonProps}>
-          <path d="M7 3v4" />
-          <path d="M17 3v4" />
-          <rect x="4" y="5" width="16" height="16" rx="2" />
-          <path d="M4 10h16" />
-          <path d="m9 15 2 2 4-4" />
-        </svg>
-      );
+    case "vida-noturna":
+      return <Moon className={className} />;
+
+    case "ao-ar-livre":
+      return <Trees className={className} />;
+
+    case "esportes":
+      return <Dumbbell className={className} />;
 
     default:
       return null;
   }
 }
+
 function StatusOverlay({
   type,
   title,

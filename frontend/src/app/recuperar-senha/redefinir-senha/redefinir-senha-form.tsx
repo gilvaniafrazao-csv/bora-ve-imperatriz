@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 export function RedefinirSenhaForm() {
   const [password, setPassword] = useState("");
@@ -169,7 +170,8 @@ export function RedefinirSenhaForm() {
                       transition-colors
                     "
                   >
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    {showPassword ? ( < EyeOff className="h-4 w-4"/>)
+                        : (< Eye className="h-4 w-4"/>)}
                   </button>
                 </div>
               </div>
@@ -180,7 +182,7 @@ export function RedefinirSenhaForm() {
                   Requisitos da senha:
                 </p>
 
-                <div className="mt-1.5 grid grid-cols-2 gap-1">
+                <div className="mt-1.5 grid grid-cols-1 gap-1 sm:grid-cols-2">
                   <span
                     className={`text-[10px] ${
                       password.length >= 8 ? "text-[#16845d]" : "text-[#8a9595]"
@@ -274,7 +276,8 @@ export function RedefinirSenhaForm() {
                       transition-colors
                     "
                   >
-                    {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    {showConfirmPassword ? ( < EyeOff className="h-4 w-4"/>)
+                        : (< Eye className="h-4 w-4"/>)}
                   </button>
                 </div>
               </div>
@@ -362,62 +365,5 @@ export function RedefinirSenhaForm() {
         </div>
       </footer>
     </main>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M2.5 12C2.5 12 6 6.5 12 6.5C18 6.5 21.5 12 21.5 12C21.5 12 18 17.5 12 17.5C6 17.5 2.5 12 2.5 12Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M3 3L21 21"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-
-      <path
-        d="M10.6 6.7C11.05 6.57 11.52 6.5 12 6.5C18 6.5 21.5 12 21.5 12C21.5 12 20.25 13.97 18.18 15.52"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="M6.15 8.08C3.72 9.64 2.5 12 2.5 12C2.5 12 6 17.5 12 17.5C13.25 17.5 14.39 17.26 15.4 16.87"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
