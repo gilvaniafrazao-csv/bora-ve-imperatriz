@@ -15,3 +15,23 @@ Projeto desenvolvido na disciplina de Projeto e Requisito de Software (IFMA - Im
 - [Registro de decisões](./decisoes.md)
 - [Arquitetura](./docs/arquitetura.md)
 - [Modelagem do banco](./docs/modelagem-banco.md)
+
+## Pipeline de CI
+
+O projeto possui uma pipeline de Integração Contínua (CI) configurada com GitHub Actions.
+
+A pipeline é executada automaticamente em:
+- Push na branch `main`.
+- Pull Requests direcionados à branch `main`.
+
+### Verificações do backend
+- Instalação das dependências com `npm ci`.
+- Verificação de tipos com `npm run typecheck`.
+- Análise de código com `npm run lint`.
+- Compilação do projeto com `npm run build`.
+
+### Verificações do frontend
+- Instalação das dependências com `npm ci`.
+- Compilação do projeto com `npm run build`.
+
+A configuração da pipeline está disponível em [.github/workflows/ci.yml](./.github/workflows/ci.yml).
