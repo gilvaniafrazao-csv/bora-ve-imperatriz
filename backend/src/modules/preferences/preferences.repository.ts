@@ -48,55 +48,28 @@ export async function findCategorySlugsByUser(userId: string): Promise<string[]>
 }
 
 /**
- * Substitui as preferências do usuário. O Supabase JS não expõe transações,
- * então a ordem das operações evita deixar o usuário com menos categorias
- * do que tinha caso algo falhe no meio: primeiro grava o que é novo,
- * só depois remove o que saiu.
+ * Substitui as preferências do usuário (faixa de preço + categorias) de forma
+ * atômica: tudo é feito pela função SQL `replace_user_preferences` numa única
+ * transação, que também serializa atualizações simultâneas do mesmo usuário
+ * e sempre atualiza `updated_at`. Ver supabase/migrations/20261007120000_*.
  */
 export async function replacePreferences(
   userId: string,
   categoryIds: string[],
   priceRange: PriceRange | null | undefined,
 ): Promise<void> {
-  const client = getSupabaseClient();
+  const { error } = await getSupabaseClient().rpc('replace_user_preferences', {
+    p_user_id: userId,
+    p_category_ids: categoryIds,
+    p_set_price_range: priceRange !== undefined,
+    p_price_range: priceRange ?? null,
+  });
 
-  const upsert = await client
-    .from('user_preferences')
-    .upsert(
-      priceRange === undefined ? { user_id: userId } : { user_id: userId, price_range: priceRange },
-      { onConflict: 'user_id', ignoreDuplicates: priceRange === undefined },
-    );
-  if (upsert.error) {
-    if (upsert.error.code === FOREIGN_KEY_VIOLATION) {
+  if (error) {
+    if (error.code === FOREIGN_KEY_VIOLATION) {
       throw new AppError('Sessão inválida ou expirada. Faça login novamente.', 401, 'UNAUTHORIZED');
     }
-    console.error('[preferences.repository] upsert preferences failed', upsert.error);
+    console.error('[preferences.repository] replace_user_preferences failed', error);
     throw toDatabaseUnavailable();
-  }
-
-  const currentIds = (await findCategoryLinks(userId)).map((link) => link.category_id);
-  const toAdd = categoryIds.filter((id) => !currentIds.includes(id));
-  const toRemove = currentIds.filter((id) => !categoryIds.includes(id));
-
-  if (toAdd.length > 0) {
-    const inserted = await client
-      .from('user_preference_categories')
-      .insert(toAdd.map((categoryId) => ({ user_id: userId, category_id: categoryId })));
-    if (inserted.error) {
-      console.error('[preferences.repository] insert categories failed', inserted.error);
-      throw toDatabaseUnavailable();
-    }
-  }
-
-  if (toRemove.length > 0) {
-    const removed = await client
-      .from('user_preference_categories')
-      .delete()
-      .eq('user_id', userId)
-      .in('category_id', toRemove);
-    if (removed.error) {
-      console.error('[preferences.repository] delete categories failed', removed.error);
-      throw toDatabaseUnavailable();
-    }
   }
 }

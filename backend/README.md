@@ -122,6 +122,8 @@ E-mail ou senha inválidos retornam `401` com o código `INVALID_CREDENTIALS`. O
 
 Rotas autenticadas: envie `Authorization: Bearer <token>` (o `token` do login). Sem token, token inválido ou expirado retornam `401 UNAUTHORIZED`.
 
+> **Requer a migration `supabase/migrations/20261007120000_replace_user_preferences.sql`** aplicada no banco (função `replace_user_preferences`, usada pelo `PUT` para gravar tudo numa única transação). Sem ela o `PUT` responde `503`. Aplique com `supabase db push` ou colando o SQL no editor do Supabase.
+
 ### `PUT /api/preferences` — registrar / editar
 
 Substitui o conjunto de categorias do usuário (serve para o onboarding e para a edição posterior).
