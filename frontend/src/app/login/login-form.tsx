@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { FormEvent, ReactNode, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+
 import { ApiError } from "@/lib/api";
 import { loginUser, saveAuthToken } from "@/lib/auth";
 
@@ -11,7 +13,7 @@ type FieldErrors = Partial<Record<FieldKey, string>>;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const inputClassName =
-  "h-[3.15rem] w-full rounded-[0.7rem] border-[1.5px] border-teal bg-white px-4 text-base font-normal text-teal placeholder:italic placeholder:font-normal placeholder:text-placeholder focus:outline-2 focus:outline-offset-1 focus:outline-teal aria-invalid:border-danger aria-invalid:outline-danger";
+  "h-12 w-full rounded-xl border border-teal/20 bg-white px-4 text-sm font-medium text-teal shadow-sm transition placeholder:font-normal placeholder:text-placeholder focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10 aria-invalid:border-danger aria-invalid:ring-danger/10";
 
 function isFieldKey(value: unknown): value is FieldKey {
   return value === "email" || value === "password";
@@ -22,27 +24,37 @@ function mapApiFieldErrors(details: unknown): FieldErrors {
     return {};
   }
 
-  const next: FieldErrors = {};
+  const errors: FieldErrors = {};
+
   for (const item of details) {
-    if (!item || typeof item !== "object" || !("field" in item) || !("message" in item)) {
+    if (
+      !item ||
+      typeof item !== "object" ||
+      !("field" in item) ||
+      !("message" in item)
+    ) {
       continue;
     }
 
     const field: unknown = item.field;
     const message: unknown = item.message;
+
     if (isFieldKey(field) && typeof message === "string") {
-      next[field] = message;
+      errors[field] = message;
     }
   }
-  return next;
+
+  return errors;
 }
 
 function validate(email: string, password: string): FieldErrors {
   const errors: FieldErrors = {};
 
-  if (!email.trim()) {
+  const normalizedEmail = email.trim();
+
+  if (!normalizedEmail) {
     errors.email = "Informe o e-mail.";
-  } else if (!EMAIL_REGEX.test(email.trim())) {
+  } else if (!EMAIL_REGEX.test(normalizedEmail)) {
     errors.email = "Informe um e-mail válido.";
   }
 
@@ -57,11 +69,18 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
+
   const [submitting, setSubmitting] = useState(false);
   const [signedInName, setSignedInName] = useState<string | null>(null);
+
+  function clearMessages() {
+    setFormError(null);
+    setHint(null);
+  }
 
   function onSocialPick(label: string) {
     setFormError(null);
@@ -70,34 +89,45 @@ export function LoginForm() {
 
   function onForgotPassword() {
     setFormError(null);
-    setHint("Recuperação de senha em breve.");
+    setHint(
+      "A recuperação de senha estará disponível em breve. Por enquanto, tente entrar novamente.",
+    );
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFormError(null);
-    setHint(null);
+
+    clearMessages();
 
     const localErrors = validate(email, password);
     setFieldErrors(localErrors);
+
     if (Object.keys(localErrors).length > 0) {
       return;
     }
 
     setSubmitting(true);
+
     try {
       const result = await loginUser({
         email: email.trim(),
         password,
       });
+
       saveAuthToken(result.token);
+
       setSignedInName(result.user.name);
       setPassword("");
+      setFieldErrors({});
     } catch (error) {
       if (error instanceof ApiError) {
-        const apiFields = mapApiFieldErrors(error.details);
-        setFieldErrors(apiFields);
-        setFormError(Object.keys(apiFields).length === 0 ? error.message : null);
+        const apiErrors = mapApiFieldErrors(error.details);
+
+        setFieldErrors(apiErrors);
+
+        if (Object.keys(apiErrors).length === 0) {
+          setFormError(error.message);
+        }
       } else {
         setFormError("Não foi possível entrar. Tente novamente.");
       }
@@ -107,112 +137,207 @@ export function LoginForm() {
   }
 
   return (
-    <main className="relative isolate grid min-h-dvh overflow-hidden bg-teal max-[900px]:grid-cols-1 min-[901px]:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-      <div className="pointer-events-none absolute inset-0 z-0 bg-brand-radial" aria-hidden="true" />
+    <main className="relative isolate grid min-h-dvh overflow-hidden bg-teal min-[901px]:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+      {/* FORMULÁRIO */}
+      <section className="relative z-10 flex min-h-dvh justify-center bg-[#f7faf9] px-5 pb-10 pt-24 min-[901px]:items-center min-[901px]:px-[clamp(2rem,5vw,4rem)] min-[901px]:py-10">
+        {/* Logo mobile */}
+        <Link
+          href="/home"
+          aria-label="Ir para a Home"
+          className="absolute right-5 top-3 min-[901px]:hidden"
+        >
+          <img
+            src="/logo-teal.svg"
+            alt="Bora Vê"
+            className="h-auto w-24 select-none object-contain"
+          />
+        </Link>
 
-      <section className="relative z-[1] flex items-center justify-center bg-peach px-[clamp(1.25rem,4vw,3rem)] py-[clamp(1.5rem,4vh,2.5rem)] max-[900px]:order-2 max-[900px]:items-start max-[900px]:px-5 max-[900px]:pb-10 max-[900px]:pt-7 min-[901px]:min-h-dvh">
-        <div className="w-full max-w-[22.75rem] max-[900px]:mx-auto max-[900px]:max-w-96">
+        {/* Voltar */}
+        <Link
+          href="/home"
+          className="absolute left-5 top-16 inline-flex items-center gap-2 text-sm font-semibold text-teal-50 transition hover:text-teal min-[901px]:left-[clamp(2rem,5vw,4rem)] min-[901px]:top-8"
+        >
+          <span aria-hidden="true">←</span>
+          Voltar para a Home
+        </Link>
+
+        <div className="w-full max-w-[25rem]">
           {signedInName ? (
-            <div className="flex flex-col gap-[1.15rem] [@media(min-width:901px)_and_(max-height:720px)]:gap-[0.85rem]" role="status">
-              <h2 className="text-2xl font-extrabold text-ink">Login realizado</h2>
-              <p className="leading-[1.45] text-teal-50">
-                Olá, <strong>{signedInName}</strong>. Você já pode explorar o Bora Vê.
-              </p>
-            </div>
+            <LoginSuccess name={signedInName} />
           ) : (
             <form
               className="flex flex-col gap-[1.15rem] [@media(min-width:901px)_and_(max-height:720px)]:gap-[0.85rem]"
               onSubmit={onSubmit}
               noValidate
             >
+              {/* Cabeçalho */}
+              <div className="mb-5">
+                <h1 className="text-[1.75rem] font-extrabold tracking-tight text-teal">
+                  Que bom ter você de volta
+                </h1>
+
+                <p className="mt-2 text-sm leading-relaxed text-teal-50">
+                  Entre na sua conta para continuar explorando o Bora Vê.
+                </p>
+              </div>
+
+              {/* E-mail */}
               <label className="flex flex-col gap-[0.45rem] text-base font-semibold text-teal">
-                <span>Qual o seu email?</span>
+                <span>E-mail</span>
+
                 <input
                   name="email"
                   type="email"
                   autoComplete="email"
+                  inputMode="email"
                   placeholder="nome@email.com"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+
+                    if (fieldErrors.email) {
+                      setFieldErrors((current) => ({
+                        ...current,
+                        email: undefined,
+                      }));
+                    }
+                  }}
                   aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={
+                    fieldErrors.email ? "login-email-error" : undefined
+                  }
                   className={inputClassName}
                 />
-                {fieldErrors.email ? <FieldError>{fieldErrors.email}</FieldError> : null}
+
+                {fieldErrors.email ? (
+                  <FieldError id="login-email-error">
+                    {fieldErrors.email}
+                  </FieldError>
+                ) : null}
               </label>
 
+              {/* Senha */}
               <label className="flex flex-col gap-[0.45rem] text-base font-semibold text-teal">
-                <span>Qual a sua senha?</span>
+                <span>Senha</span>
+
                 <div className="relative">
                   <input
                     name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    placeholder="********"
+                    placeholder="••••••••"
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+
+                      if (fieldErrors.password) {
+                        setFieldErrors((current) => ({
+                          ...current,
+                          password: undefined,
+                        }));
+                      }
+                    }}
                     aria-invalid={Boolean(fieldErrors.password)}
-                    className={`${inputClassName} pr-[2.8rem]`}
+                    aria-describedby={
+                      fieldErrors.password ? "login-password-error" : undefined
+                    }
+                    className={`${inputClassName} pr-12`}
                   />
+
                   <button
-                    className="absolute top-1/2 right-[0.7rem] grid size-[1.8rem] -translate-y-1/2 place-items-center border-0 bg-transparent text-teal"
                     type="button"
-                    onClick={() => setShowPassword((value) => !value)}
-                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute right-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-teal transition hover:bg-teal-10 focus:outline-none focus:ring-2 focus:ring-teal/20"
+                    aria-label={
+                      showPassword ? "Ocultar senha" : "Mostrar senha"
+                    }
+                    aria-pressed={showPassword}
                   >
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    {showPassword ? (
+                      <EyeOff size={18} aria-hidden="true" />
+                    ) : (
+                      <Eye size={18} aria-hidden="true" />
+                    )}
                   </button>
                 </div>
-                {fieldErrors.password ? <FieldError>{fieldErrors.password}</FieldError> : null}
+
+                {fieldErrors.password ? (
+                  <FieldError id="login-password-error">
+                    {fieldErrors.password}
+                  </FieldError>
+                ) : null}
               </label>
 
+              {/* Recuperação */}
               <button
-                className="-mt-1 self-end border-0 bg-transparent text-[0.82rem] font-semibold text-teal-50 hover:text-teal"
                 type="button"
                 onClick={onForgotPassword}
+                className="-mt-1 self-end rounded-md text-[0.82rem] font-semibold text-teal-50 transition hover:text-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
               >
-                Não sei a minha senha
+                Esqueci minha senha
               </button>
 
+              {/* Erro geral */}
               {formError ? (
-                <p className="-mt-2 text-[0.8rem] font-semibold text-danger" role="alert">
+                <p
+                  className="-mt-2 text-sm font-semibold text-danger"
+                  role="alert"
+                >
                   {formError}
                 </p>
               ) : null}
 
+              {/* Entrar */}
               <button
-                className="inline-flex h-[3.1rem] cursor-pointer items-center justify-center rounded-full border-0 bg-teal text-base font-bold text-white hover:bg-teal-70 disabled:cursor-wait disabled:opacity-70"
                 type="submit"
                 disabled={submitting}
+                className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-xl bg-teal px-5 text-sm font-bold text-white transition hover:bg-teal-70 focus:outline-none focus:ring-2 focus:ring-teal/20 disabled:cursor-wait disabled:opacity-60"
               >
-                {submitting ? "Entrando..." : "Bora entrar!"}
+                {submitting ? "Entrando..." : "Entrar"}
               </button>
 
-              <div className="mt-[0.2rem] grid grid-cols-[1fr_auto_1fr] items-center gap-3.5 text-[0.92rem] text-teal before:h-[1.5px] before:bg-teal before:content-[''] after:h-[1.5px] after:bg-teal after:content-['']">
-                <span>ou caso você prefira</span>
+              {/* Divisor */}
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3.5 text-[0.82rem] text-teal-50 before:h-px before:bg-teal/30 before:content-[''] after:h-px after:bg-teal/30 after:content-['']">
+                <span>ou continue com</span>
               </div>
 
-              <div className="flex justify-center gap-5" aria-label="Entrar com rede social">
+              {/* Redes sociais */}
+              <div
+                className="flex justify-center gap-5"
+                aria-label="Opções de login com rede social"
+              >
                 <SocialButton label="Apple" onPick={onSocialPick}>
                   <AppleIcon />
                 </SocialButton>
+
                 <SocialButton label="Google" onPick={onSocialPick}>
                   <GoogleIcon />
                 </SocialButton>
+
                 <SocialButton label="Facebook" onPick={onSocialPick}>
                   <FacebookIcon />
                 </SocialButton>
               </div>
 
+              {/* Mensagens informativas */}
               {hint ? (
-                <p className="text-center text-[0.8rem] font-semibold text-teal" role="status">
+                <p
+                  className="text-center text-[0.8rem] font-semibold text-teal"
+                  role="status"
+                >
                   {hint}
                 </p>
               ) : null}
 
-              <p className="mt-[0.15rem] text-center text-[0.95rem] text-muted">
-                Ainda não tem conta?{" "}
-                <Link className="font-bold text-teal underline underline-offset-2" href="/cadastro">
-                  Clica aqui para criar uma
+              {/* Cadastro */}
+              <p className="text-center text-[0.95rem] text-muted">
+                Ainda não tem uma conta?{" "}
+                <Link
+                  href="/cadastro"
+                  className="font-bold text-teal underline underline-offset-2 transition hover:text-teal-70"
+                >
+                  Criar conta
                 </Link>
               </p>
             </form>
@@ -220,31 +345,74 @@ export function LoginForm() {
         </div>
       </section>
 
+      {/* PAINEL DA MARCA — DESKTOP */}
       <section
-        className="relative z-[2] flex flex-col justify-center overflow-visible px-[clamp(1.5rem,5vw,4rem)] pb-[clamp(7rem,18vh,9.5rem)] pt-[clamp(2rem,6vh,4.5rem)] text-white max-[900px]:order-1 max-[900px]:min-h-[min(40vh,22rem)] max-[900px]:overflow-hidden max-[900px]:px-6 max-[900px]:pb-[6.5rem] max-[900px]:pt-9 max-[600px]:min-h-[13.5rem] max-[600px]:px-[1.15rem] max-[600px]:pb-[5.25rem] max-[600px]:pt-7 min-[901px]:min-h-dvh [@media(min-width:901px)_and_(max-height:720px)]:pb-[6.5rem]"
-        aria-label="Bora Vê"
+        className="relative z-10 hidden min-h-dvh overflow-hidden bg-teal px-[clamp(2rem,5vw,4rem)] py-[clamp(3rem,8vh,6rem)] text-white min-[901px]:flex min-[901px]:flex-col min-[901px]:justify-center"
+        aria-label="Sobre o Bora Vê"
       >
-        <div className="relative z-[1] max-w-[32rem]">
-          <h1 className="flex flex-col text-[clamp(2rem,4.4vw,3.35rem)] font-extrabold leading-[1.12] tracking-[-0.03em] text-lime max-[900px]:text-[clamp(2.15rem,9vw,3.1rem)] max-[600px]:text-[2.05rem]">
-            <span>Tem coisa boa</span>
-            <span>te esperando.</span>
-          </h1>
-          <p className="mt-[1.15rem] max-w-[22rem] text-[clamp(1.05rem,1.5vw,1.25rem)] font-normal leading-[1.35] text-[#f3f6f5] max-[900px]:text-lg max-[600px]:max-w-[18rem] max-[600px]:text-base">
-            Entre para continuar encontrando lugares que combinam com você.
+        <div
+          className="pointer-events-none absolute inset-0 bg-brand-radial"
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 max-w-[32rem]">
+          <p className="mb-4 text-sm font-bold uppercase tracking-[0.16em] text-white/70">
+            Descubra a cidade
+          </p>
+
+          <h2 className="text-[clamp(2.25rem,3.5vw,3.35rem)] font-extrabold leading-[1.06] tracking-[-0.035em] text-lime">
+            Sempre tem algo
+            <br />
+            novo para ver.
+          </h2>
+
+          <p className="mt-5 max-w-[25rem] text-base leading-relaxed text-white/80">
+            Lugares, sabores, encontros e experiências que fazem parte da
+            cidade.
           </p>
         </div>
+
+        {/* Logo no rodapé */}
         <img
-          className="pointer-events-none absolute bottom-[-8%] left-[-10%] z-10 w-[118%] max-w-none select-none max-[900px]:bottom-[-18%] max-[900px]:left-[-6%] max-[900px]:w-[min(94%,28rem)] max-[600px]:bottom-[-1.6rem] max-[600px]:left-[-1.2rem] max-[600px]:w-[18rem] [@media(min-width:901px)_and_(max-height:720px)]:bottom-[-10%] [@media(min-width:901px)_and_(max-height:720px)]:w-[110%]"
-          src="/logo.svg"
-          alt="Boravê!"
+          src="/logo-redondo.svg"
+          alt=""
+          aria-hidden="true"
+          className="absolute bottom-8 right-8 z-10 w-16 select-none object-contain"
         />
       </section>
     </main>
   );
 }
 
-function FieldError({ children }: { children: ReactNode }) {
-  return <small className="text-[0.8rem] font-semibold text-danger">{children}</small>;
+function LoginSuccess({ name }: { name: string }) {
+  return (
+    <div className="flex flex-col gap-4" role="status">
+      <span className="text-sm font-bold text-teal-50">Tudo certo!</span>
+
+      <h1 className="text-3xl font-extrabold tracking-tight text-teal">
+        Bem-vindo, {name}.
+      </h1>
+
+      <p className="leading-relaxed text-teal-50">
+        Sua conta está conectada. Continue explorando o Bora Vê.
+      </p>
+
+      <Link
+        href="/home"
+        className="mt-2 inline-flex h-12 items-center justify-center rounded-xl bg-teal px-5 text-sm font-bold text-white transition hover:bg-teal-70 focus:outline-none focus:ring-2 focus:ring-teal/20"
+      >
+        Ir para a Home
+      </Link>
+    </div>
+  );
+}
+
+function FieldError({ id, children }: { id?: string; children: ReactNode }) {
+  return (
+    <small id={id} className="text-[0.8rem] font-semibold text-danger">
+      {children}
+    </small>
+  );
 }
 
 function SocialButton({
@@ -258,42 +426,14 @@ function SocialButton({
 }) {
   return (
     <button
-      className="grid size-10 place-items-center rounded-full border-0 bg-white text-teal shadow-[0_1px_3px_rgba(12,70,81,0.16)] transition hover:bg-[#f7f7f7]"
       type="button"
       title={`${label} — em breve`}
       aria-label={`Entrar com ${label} (em breve)`}
       onClick={() => onPick(label)}
+      className="grid size-10 place-items-center rounded-full bg-white text-teal shadow-[0_1px_3px_rgba(12,70,81,0.16)] transition hover:-translate-y-0.5 hover:bg-[#f7f7f7] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal/20"
     >
       {children}
     </button>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg className="size-[1.2rem]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <svg className="size-[1.2rem]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M3 3l18 18M9.9 9.9A3.1 3.1 0 0 0 12 15.1m0 0a3.1 3.1 0 0 0 2.9-4.1M6.1 6.4C4.1 7.8 2.5 12 2.5 12S6.2 18.5 12 18.5c2 0 3.7-.7 5.1-1.7M10.2 5.7C10.8 5.6 11.4 5.5 12 5.5 17.8 5.5 21.5 12 21.5 12s-.6 1.1-1.7 2.5"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
 
