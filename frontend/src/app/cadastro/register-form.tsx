@@ -2,6 +2,17 @@
 
 import Link from "next/link";
 import { FormEvent, ReactNode, useState } from "react";
+import {
+  Beef,
+  CakeSlice,
+  Eye,
+  EyeOff,
+  Martini,
+  Pizza,
+  Sandwich,
+  Shell,
+} from "lucide-react";
+
 import { ApiError } from "@/lib/api";
 import { registerUser } from "@/lib/auth";
 
@@ -9,12 +20,12 @@ type FieldKey = "name" | "email" | "password";
 type FieldErrors = Partial<Record<FieldKey, string>>;
 
 const ONBOARDING_CATEGORIES = [
-  { slug: "sushi", label: "Sushi", icon: "/icons/sushi.svg" },
-  { slug: "pizza", label: "Pizza", icon: "/icons/pizza.svg" },
-  { slug: "bar", label: "Bar", icon: "/icons/bar.svg" },
-  { slug: "doces", label: "Doces", icon: "/icons/doce.svg" },
-  { slug: "churrasco", label: "Churrasco", icon: "/icons/churrasco.svg" },
-  { slug: "hamburguer", label: "Hambúrguer", icon: "/icons/hamburguer.svg" }
+  { slug: "sushi", label: "Sushi", icon: Shell },
+  { slug: "pizza", label: "Pizza", icon: Pizza },
+  { slug: "bar", label: "Bar", icon: Martini },
+  { slug: "doces", label: "Doces", icon: CakeSlice },
+  { slug: "churrasco", label: "Churrasco", icon: Beef },
+  { slug: "hamburguer", label: "Hambúrguer", icon: Sandwich },
 ] as const;
 
 type OnboardingSlug = (typeof ONBOARDING_CATEGORIES)[number]["slug"];
@@ -23,7 +34,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_CATEGORIES = 3;
 
 const inputClassName =
-  "h-[3.15rem] w-full rounded-[0.7rem] border-[1.5px] border-teal bg-white px-4 text-base font-normal text-teal placeholder:italic placeholder:font-normal placeholder:text-placeholder focus:outline-2 focus:outline-offset-1 focus:outline-teal aria-invalid:border-danger aria-invalid:outline-danger";
+  "h-12 w-full rounded-xl border border-teal/20 bg-white px-4 text-sm font-medium text-teal shadow-sm transition placeholder:font-normal placeholder:text-placeholder focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10 aria-invalid:border-danger aria-invalid:ring-danger/10";
 
 function isFieldKey(value: unknown): value is FieldKey {
   return value === "name" || value === "email" || value === "password";
@@ -34,22 +45,30 @@ function mapApiFieldErrors(details: unknown): FieldErrors {
     return {};
   }
 
-  const next: FieldErrors = {};
+  const errors: FieldErrors = {};
+
   for (const item of details) {
-    if (!item || typeof item !== "object" || !("field" in item) || !("message" in item)) {
+    if (
+      !item ||
+      typeof item !== "object" ||
+      !("field" in item) ||
+      !("message" in item)
+    ) {
       continue;
     }
 
     const field: unknown = item.field;
     const message: unknown = item.message;
+
     if (isFieldKey(field) && typeof message === "string") {
-      next[field] = message;
+      errors[field] = message;
     }
   }
-  return next;
+
+  return errors;
 }
 
-function categoryErrorMessage(details: unknown): string | null {
+function getCategoryError(details: unknown): string | null {
   if (!Array.isArray(details)) {
     return null;
   }
@@ -72,15 +91,19 @@ function categoryErrorMessage(details: unknown): string | null {
 
 function validate(name: string, email: string, password: string): FieldErrors {
   const errors: FieldErrors = {};
-  if (!name.trim()) {
+
+  const normalizedName = name.trim();
+  const normalizedEmail = email.trim();
+
+  if (!normalizedName) {
     errors.name = "Informe como podemos te chamar.";
-  } else if (name.trim().length < 2) {
+  } else if (normalizedName.length < 2) {
     errors.name = "O nome deve ter pelo menos 2 caracteres.";
   }
 
-  if (!email.trim()) {
+  if (!normalizedEmail) {
     errors.email = "Informe o e-mail.";
-  } else if (!EMAIL_REGEX.test(email.trim())) {
+  } else if (!EMAIL_REGEX.test(normalizedEmail)) {
     errors.email = "Informe um e-mail válido.";
   }
 
@@ -98,33 +121,52 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [createdName, setCreatedName] = useState<string | null>(null);
   const [socialHint, setSocialHint] = useState<string | null>(null);
-  const [step, setStep] = useState<1 | 2>(1);
-  const [selectedSlugs, setSelectedSlugs] = useState<OnboardingSlug[]>([]);
   const [preferencesError, setPreferencesError] = useState<string | null>(null);
 
+  const [step, setStep] = useState<1 | 2>(1);
+  const [selectedSlugs, setSelectedSlugs] = useState<OnboardingSlug[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [createdName, setCreatedName] = useState<string | null>(null);
+
   function onSocialPick(label: string) {
+    setFormError(null);
     setSocialHint(`Cadastro com ${label} em breve.`);
+  }
+
+  function clearFieldError(field: FieldKey) {
+    if (!fieldErrors[field]) {
+      return;
+    }
+
+    setFieldErrors((current) => ({
+      ...current,
+      [field]: undefined,
+    }));
   }
 
   function toggleCategory(slug: OnboardingSlug) {
     setPreferencesError(null);
+
     setSelectedSlugs((current) =>
-      current.includes(slug) ? current.filter((item) => item !== slug) : [...current, slug],
+      current.includes(slug)
+        ? current.filter((item) => item !== slug)
+        : [...current, slug],
     );
   }
 
   function goToPreferences(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     setFormError(null);
     setSocialHint(null);
 
     const localErrors = validate(name, email, password);
     setFieldErrors(localErrors);
+
     if (Object.keys(localErrors).length > 0) {
       return;
     }
@@ -132,12 +174,20 @@ export function RegisterForm() {
     setStep(2);
   }
 
+  function goBackToAccount() {
+    setPreferencesError(null);
+    setFormError(null);
+    setStep(1);
+  }
+
   async function createAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     setFormError(null);
     setPreferencesError(null);
 
     const localErrors = validate(name, email, password);
+
     if (Object.keys(localErrors).length > 0) {
       setFieldErrors(localErrors);
       setStep(1);
@@ -150,6 +200,7 @@ export function RegisterForm() {
     }
 
     setSubmitting(true);
+
     try {
       const result = await registerUser({
         name: name.trim(),
@@ -157,22 +208,31 @@ export function RegisterForm() {
         password,
         categorySlugs: selectedSlugs,
       });
+
       setCreatedName(result.user.name);
       setPassword("");
+      setFieldErrors({});
     } catch (error) {
       if (error instanceof ApiError) {
-        const apiFields = mapApiFieldErrors(error.details);
-        const categoryMessage = categoryErrorMessage(error.details);
+        const apiErrors = mapApiFieldErrors(error.details);
+        const categoryError = getCategoryError(error.details);
 
-        if (error.code === "EMAIL_ALREADY_REGISTERED" || apiFields.email) {
-          setFieldErrors(apiFields);
+        if (error.code === "EMAIL_ALREADY_REGISTERED" || apiErrors.email) {
+          setFieldErrors(apiErrors);
+          setFormError(apiErrors.email ? null : error.message);
           setStep(1);
-          setFormError(apiFields.email ? null : error.message);
-        } else if (categoryMessage) {
-          setPreferencesError(categoryMessage);
-        } else {
-          setFieldErrors(apiFields);
-          setFormError(Object.keys(apiFields).length === 0 ? error.message : null);
+          return;
+        }
+
+        if (categoryError) {
+          setPreferencesError(categoryError);
+          return;
+        }
+
+        setFieldErrors(apiErrors);
+
+        if (Object.keys(apiErrors).length === 0) {
+          setFormError(error.message);
         }
       } else {
         setFormError("Não foi possível criar a conta. Tente novamente.");
@@ -183,208 +243,133 @@ export function RegisterForm() {
   }
 
   return (
-    <main className="relative isolate grid min-h-dvh overflow-hidden bg-teal max-[900px]:grid-cols-1 min-[901px]:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-      <div className="pointer-events-none absolute inset-0 z-0 bg-brand-radial" aria-hidden="true" />
-
+    <main className="relative isolate grid min-h-dvh overflow-hidden bg-teal min-[901px]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+      {/* PAINEL DA MARCA — DESKTOP */}
       <section
-        className="relative z-[2] flex flex-col justify-center overflow-visible px-[clamp(1.5rem,5vw,4rem)] pb-[clamp(7rem,18vh,9.5rem)] pt-[clamp(2rem,6vh,4.5rem)] text-white max-[900px]:min-h-[min(40vh,22rem)] max-[900px]:overflow-hidden max-[900px]:px-6 max-[900px]:pb-[6.5rem] max-[900px]:pt-9 max-[600px]:min-h-[13.5rem] max-[600px]:px-[1.15rem] max-[600px]:pb-[5.25rem] max-[600px]:pt-7 min-[901px]:min-h-dvh [@media(min-width:901px)_and_(max-height:720px)]:pb-[6.5rem]"
-        aria-label="Bora Vê"
+        className="relative z-10 hidden min-h-dvh overflow-hidden bg-teal px-[clamp(2rem,5vw,4rem)] py-[clamp(3rem,8vh,6rem)] text-white min-[901px]:flex min-[901px]:flex-col min-[901px]:justify-center"
+        aria-label="Sobre o Bora Vê"
       >
-        <div className="relative z-[1] max-w-[32rem]">
-          <h1 className="flex flex-col">
-            <span className="text-[clamp(2rem,5vw,4rem)] font-extrabold leading-[1.125] tracking-[-0.03em] text-lime max-[900px]:text-[clamp(2.25rem,10vw,3.25rem)] max-[600px]:text-[2.15rem] max-[600px]:leading-[1.12]">
-              Bora Vê
-            </span>
-            <span className="text-[clamp(2rem,2vw,2.5rem)] font-extrabold italic leading-[1.24] tracking-[-0.02em] text-lime max-[900px]:text-[clamp(1.6rem,7vw,2.25rem)] max-[600px]:text-[1.55rem]">
-              o que tá rolando?
-            </span>
-          </h1>
-          <p className="mt-[1.15rem] max-w-[22rem] text-[clamp(1.25rem,1vw,1.25rem)] font-normal leading-[1.167] text-[#f3f6f5] max-[900px]:text-lg max-[600px]:max-w-[17rem] max-[600px]:text-base">
-            Crie sua conta e descubra lugares, eventos e experiências perto de você.
+        <div
+          className="pointer-events-none absolute inset-0 bg-brand-radial"
+          aria-hidden="true"
+        />
+
+        {/* Voltar — desktop */}
+        {step === 1 && !createdName ? (
+          <Link
+            href="/home"
+            className="absolute left-[clamp(2rem,5vw,4rem)] top-8 z-20 inline-flex items-center gap-2 text-sm font-semibold text-white/80 transition hover:text-white"
+          >
+            <span aria-hidden="true">←</span>
+            Voltar para a Home
+          </Link>
+        ) : null}
+
+        <div className="relative z-10 max-w-[32rem]">
+          <p className="mb-4 text-sm font-bold uppercase tracking-[0.16em] text-white/70">
+            Do seu jeito
+          </p>
+
+          <h2 className="text-[clamp(2.25rem,3.5vw,3.35rem)] font-extrabold leading-[1.06] tracking-[-0.035em] text-lime">
+            Sua cidade tem
+            <br />
+            muito a descobrir.
+          </h2>
+
+          <p className="mt-5 max-w-[25rem] text-base leading-relaxed text-white/80">
+            Conte um pouco do que você gosta e encontre experiências que
+            combinam com você.
           </p>
         </div>
+
         <img
-          className="pointer-events-none absolute bottom-[-8%] left-[-2%] z-10 w-[116%] max-w-none select-none max-[900px]:bottom-[-18%] max-[900px]:left-[-6%] max-[900px]:w-[min(94%,28rem)] max-[600px]:bottom-[-1.6rem] max-[600px]:left-[-1.2rem] max-[600px]:w-[18rem] [@media(min-width:901px)_and_(max-height:720px)]:bottom-[-10%] [@media(min-width:901px)_and_(max-height:720px)]:w-[110%]"
-          src="/logo.svg"
-          alt="Boravê!"
+          src="/logo-redondo.svg"
+          alt=""
+          aria-hidden="true"
+          className="absolute bottom-8 left-8 z-10 w-16 select-none object-contain"
         />
       </section>
 
-      <section className="relative z-[1] flex items-center justify-center bg-peach px-[clamp(1.25rem,4vw,3rem)] py-[clamp(1.5rem,4vh,2.5rem)] max-[900px]:items-start max-[900px]:px-5 max-[900px]:pb-10 max-[900px]:pt-7 min-[901px]:min-h-dvh">
-        <div className="w-full max-w-[22.75rem] max-[900px]:mx-auto max-[900px]:max-w-96">
-          {createdName ? (
-            <div className="flex flex-col gap-[1.15rem] [@media(min-width:901px)_and_(max-height:720px)]:gap-[0.85rem]" role="status">
-              <StepBar step={2} />
-              <h2 className="text-2xl font-extrabold text-ink">Conta criada com sucesso</h2>
-              <p className="leading-[1.45] text-teal-50">
-                Olá, <strong>{createdName}</strong>. Você já pode explorar o Bora Vê.
-              </p>
-              <Link
-                className="mt-[0.35rem] inline-flex h-[3.1rem] items-center justify-center rounded-xl bg-teal text-base font-bold text-white no-underline hover:bg-teal-70"
-                href="/login"
-              >
-                Bora entrar
-              </Link>
-            </div>
-          ) : step === 2 ? (
-            <form className="flex flex-col" onSubmit={createAccount} noValidate>
-              <StepBar step={2} />
-              <h2 className="text-[1.85rem] font-extrabold leading-[1.15] text-ink">
-                Quais os seus interesses?
-              </h2>
-              <p className="mt-2 max-w-[20rem] text-[0.95rem] leading-snug text-muted">
-                Escolha pelo menos 3 categorias para sabermos o que você quer ver.
-              </p>
-
-              <div className="mt-5 flex flex-wrap justify-items-start gap-x-3 gap-y-3">
-                {ONBOARDING_CATEGORIES.map((category) => {
-                  const selected = selectedSlugs.includes(category.slug);
-                  return (
-                    <button
-                      key={category.slug}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => toggleCategory(category.slug)}
-                      className={`inline-flex w-fit items-center gap-2 rounded-full px-4 py-2.5 text-[0.95rem] font-medium whitespace-nowrap transition ${
-                        selected
-                          ? "bg-teal text-white"
-                          : "bg-chip text-ink hover:bg-teal-10"
-                      }`}
-                    >
-                      <img
-                        src={category.icon}
-                        alt=""
-                        className={`size-5 shrink-0 ${selected ? "brightness-0 invert" : ""}`}
-                      />
-                      {category.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {preferencesError ? (
-                <p className="mt-4 text-[0.8rem] font-semibold text-danger" role="alert">
-                  {preferencesError}
-                </p>
-              ) : null}
-
-              {formError ? (
-                <p className="mt-4 text-[0.8rem] font-semibold text-danger" role="alert">
-                  {formError}
-                </p>
-              ) : null}
-
-              <button
-                className="mt-6 inline-flex h-[3.1rem] cursor-pointer items-center justify-center rounded-full border-0 bg-teal text-base font-bold text-white hover:bg-teal-70 disabled:cursor-wait disabled:opacity-70"
-                type="submit"
-                disabled={submitting}
-              >
-                {submitting ? "Criando conta..." : "Bora lá!"}
-              </button>
-            </form>
-          ) : (
-            <form
-              className="flex flex-col gap-[1.15rem] [@media(min-width:901px)_and_(max-height:720px)]:gap-[0.85rem]"
-              onSubmit={goToPreferences}
-              noValidate
+      {/* CADASTRO */}
+      <section className="relative z-10 flex min-h-dvh justify-center bg-[#f7faf9] px-5 pb-10 pt-30 min-[901px]:items-center min-[901px]:px-[clamp(2rem,5vw,4rem)] min-[901px]:py-10">
+        {/* Navegação mobile */}
+        {step === 1 && !createdName ? (
+          <>
+            <Link
+              href="/home"
+              className="absolute left-5 top-18 inline-flex items-center gap-2 text-sm font-semibold text-teal-50 transition hover:text-teal min-[901px]:hidden"
             >
-              <StepBar step={1} />
+              <span aria-hidden="true">←</span>
+              Voltar para a Home
+            </Link>
 
-              <label className="flex flex-col gap-[0.45rem] text-base font-semibold text-teal">
-                <span>Como podemos te chamar?</span>
-                <input
-                  name="name"
-                  autoComplete="name"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  aria-invalid={Boolean(fieldErrors.name)}
-                  className={inputClassName}
-                />
-                {fieldErrors.name ? <FieldError>{fieldErrors.name}</FieldError> : null}
-              </label>
+            <Link
+              href="/home"
+              aria-label="Ir para a Home"
+              className="absolute right-5 top-3 min-[901px]:hidden"
+            >
+              <img
+                src="/logo-teal.svg"
+                alt="Bora Vê"
+                className="h-auto w-24 select-none object-contain"
+              />
+            </Link>
+          </>
+        ) : null}
 
-              <label className="flex flex-col gap-[0.45rem] text-base font-semibold text-teal">
-                <span>Qual o seu email?</span>
-                <input
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="nome@email.com"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  aria-invalid={Boolean(fieldErrors.email)}
-                  className={inputClassName}
-                />
-                {fieldErrors.email ? <FieldError>{fieldErrors.email}</FieldError> : null}
-              </label>
+        {/* Logo mobile nas demais etapas */}
+        {step === 2 || createdName ? (
+          <Link
+            href="/home"
+            aria-label="Ir para a Home"
+            className="absolute right-5 top-3 min-[901px]:hidden"
+          >
+            <img
+              src="/logo-teal.svg"
+              alt="Bora Vê"
+              className="h-auto w-24 select-none object-contain"
+            />
+          </Link>
+        ) : null}
 
-              <label className="flex flex-col gap-[0.45rem] text-base font-semibold text-teal">
-                <span>Cria uma senha</span>
-                <div className="relative">
-                  <input
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder="********"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    aria-invalid={Boolean(fieldErrors.password)}
-                    className={`${inputClassName} pr-[2.8rem]`}
-                  />
-                  <button
-                    className="absolute top-1/2 right-[0.7rem] grid size-[1.8rem] -translate-y-1/2 place-items-center border-0 bg-transparent text-teal"
-                    type="button"
-                    onClick={() => setShowPassword((value) => !value)}
-                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                  >
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
-                </div>
-                {fieldErrors.password ? <FieldError>{fieldErrors.password}</FieldError> : null}
-              </label>
-
-              {formError ? (
-                <p className="text-[0.8rem] font-semibold text-danger" role="alert">
-                  {formError}
-                </p>
-              ) : null}
-
-              <button
-                className="mt-[0.35rem] inline-flex h-[3.1rem] cursor-pointer items-center justify-center rounded-full border-0 bg-teal text-base font-bold text-white hover:bg-teal-70"
-                type="submit"
-              >
-                Bora lá!
-              </button>
-
-              <div className="mt-[0.2rem] grid grid-cols-[1fr_auto_1fr] items-center gap-3.5 text-[0.92rem] text-teal before:h-[1.5px] before:bg-teal before:content-[''] after:h-[1.5px] after:bg-teal after:content-['']">
-                <span>ou caso você prefira</span>
-              </div>
-
-              <div className="flex justify-center gap-5" aria-label="Entrar com rede social">
-                <SocialButton label="Apple" onPick={onSocialPick}>
-                  <AppleIcon />
-                </SocialButton>
-                <SocialButton label="Google" onPick={onSocialPick}>
-                  <GoogleIcon />
-                </SocialButton>
-                <SocialButton label="Facebook" onPick={onSocialPick}>
-                  <FacebookIcon />
-                </SocialButton>
-              </div>
-
-              {socialHint ? (
-                <p className="text-center text-[0.8rem] font-semibold text-teal" role="status">
-                  {socialHint}
-                </p>
-              ) : null}
-
-              <p className="mt-[0.15rem] text-center text-[0.95rem] text-muted">
-                Já tem conta?{" "}
-                <Link className="font-bold text-teal underline underline-offset-2" href="/login">
-                  Clique aqui para entrar
-                </Link>
-              </p>
-            </form>
+        <div className="w-full max-w-[25rem]">
+          {createdName ? (
+            <RegistrationSuccess name={createdName} />
+          ) : step === 2 ? (
+            <PreferencesStep
+              selectedSlugs={selectedSlugs}
+              preferencesError={preferencesError}
+              formError={formError}
+              submitting={submitting}
+              onToggle={toggleCategory}
+              onBack={goBackToAccount}
+              onSubmit={createAccount}
+            />
+          ) : (
+            <AccountStep
+              name={name}
+              email={email}
+              password={password}
+              showPassword={showPassword}
+              fieldErrors={fieldErrors}
+              formError={formError}
+              socialHint={socialHint}
+              onNameChange={(value) => {
+                setName(value);
+                clearFieldError("name");
+              }}
+              onEmailChange={(value) => {
+                setEmail(value);
+                clearFieldError("email");
+              }}
+              onPasswordChange={(value) => {
+                setPassword(value);
+                clearFieldError("password");
+              }}
+              onTogglePassword={() => setShowPassword((current) => !current)}
+              onSocialPick={onSocialPick}
+              onSubmit={goToPreferences}
+            />
           )}
         </div>
       </section>
@@ -392,17 +377,382 @@ export function RegisterForm() {
   );
 }
 
-function StepBar({ step }: { step: 1 | 2 }) {
+type AccountStepProps = {
+  name: string;
+  email: string;
+  password: string;
+  showPassword: boolean;
+  fieldErrors: FieldErrors;
+  formError: string | null;
+  socialHint: string | null;
+  onNameChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
+  onTogglePassword: () => void;
+  onSocialPick: (label: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+};
+
+function AccountStep({
+  name,
+  email,
+  password,
+  showPassword,
+  fieldErrors,
+  formError,
+  socialHint,
+  onNameChange,
+  onEmailChange,
+  onPasswordChange,
+  onTogglePassword,
+  onSocialPick,
+  onSubmit,
+}: AccountStepProps) {
   return (
-    <div className="mb-5 grid grid-cols-2 gap-[0.45rem]" aria-label={`Etapa ${step} de 2`}>
-      <span className="h-[0.38rem] rounded-full bg-teal" />
-      <span className={`h-[0.38rem] rounded-full ${step === 2 ? "bg-teal" : "bg-step"}`} />
+    <form
+      className="flex flex-col gap-[1.15rem] [@media(min-width:901px)_and_(max-height:720px)]:gap-[0.85rem]"
+      onSubmit={onSubmit}
+      noValidate
+    >
+      <StepBar step={1} />
+
+      <div>
+        <h1 className="text-[1.75rem] font-extrabold tracking-tight text-teal">
+          Crie sua conta
+        </h1>
+
+        <p className="mt-2 text-sm leading-relaxed text-teal-50">
+          Comece com algumas informações básicas.
+        </p>
+      </div>
+
+      <label className="flex flex-col gap-[0.45rem] text-base font-semibold text-teal">
+        <span>Nome</span>
+
+        <input
+          name="name"
+          autoComplete="name"
+          placeholder="Como podemos chamar você?"
+          value={name}
+          onChange={(event) => onNameChange(event.target.value)}
+          aria-invalid={Boolean(fieldErrors.name)}
+          aria-describedby={
+            fieldErrors.name ? "register-name-error" : undefined
+          }
+          className={inputClassName}
+        />
+
+        {fieldErrors.name ? (
+          <FieldError id="register-name-error">{fieldErrors.name}</FieldError>
+        ) : null}
+      </label>
+
+      <label className="flex flex-col gap-[0.45rem] text-base font-semibold text-teal">
+        <span>E-mail</span>
+
+        <input
+          name="email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          placeholder="nome@email.com"
+          value={email}
+          onChange={(event) => onEmailChange(event.target.value)}
+          aria-invalid={Boolean(fieldErrors.email)}
+          aria-describedby={
+            fieldErrors.email ? "register-email-error" : undefined
+          }
+          className={inputClassName}
+        />
+
+        {fieldErrors.email ? (
+          <FieldError id="register-email-error">{fieldErrors.email}</FieldError>
+        ) : null}
+      </label>
+
+      <label className="flex flex-col gap-[0.45rem] text-base font-semibold text-teal">
+        <span>Senha</span>
+
+        <div className="relative">
+          <input
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(event) => onPasswordChange(event.target.value)}
+            aria-invalid={Boolean(fieldErrors.password)}
+            aria-describedby={
+              fieldErrors.password
+                ? "register-password-error"
+                : "register-password-hint"
+            }
+            className={`${inputClassName} pr-12`}
+          />
+
+          <button
+            type="button"
+            onClick={onTogglePassword}
+            className="absolute right-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-teal transition hover:bg-teal-10 focus:outline-none focus:ring-2 focus:ring-teal/20"
+            aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            aria-pressed={showPassword}
+          >
+            {showPassword ? (
+              <EyeOff size={18} aria-hidden="true" />
+            ) : (
+              <Eye size={18} aria-hidden="true" />
+            )}
+          </button>
+        </div>
+
+        {fieldErrors.password ? (
+          <FieldError id="register-password-error">
+            {fieldErrors.password}
+          </FieldError>
+        ) : (
+          <span
+            id="register-password-hint"
+            className="text-xs font-normal text-teal-50"
+          >
+            Use pelo menos 8 caracteres.
+          </span>
+        )}
+      </label>
+
+      {formError ? (
+        <p className="text-sm font-semibold text-danger" role="alert">
+          {formError}
+        </p>
+      ) : null}
+
+      <button
+        type="submit"
+        className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-xl bg-teal px-5 text-sm font-bold text-white transition hover:bg-teal-70 focus:outline-none focus:ring-2 focus:ring-teal/20"
+      >
+        Continuar
+      </button>
+
+      <SocialDivider />
+
+      <div
+        className="flex justify-center gap-5"
+        aria-label="Opções de cadastro com rede social"
+      >
+        <SocialButton label="Apple" onPick={onSocialPick}>
+          <AppleIcon />
+        </SocialButton>
+
+        <SocialButton label="Google" onPick={onSocialPick}>
+          <GoogleIcon />
+        </SocialButton>
+
+        <SocialButton label="Facebook" onPick={onSocialPick}>
+          <FacebookIcon />
+        </SocialButton>
+      </div>
+
+      {socialHint ? (
+        <p
+          className="text-center text-[0.8rem] font-semibold text-teal"
+          role="status"
+        >
+          {socialHint}
+        </p>
+      ) : null}
+
+      <p className="text-center text-[0.95rem] text-muted">
+        Já tem uma conta?{" "}
+        <Link
+          href="/login"
+          className="font-bold text-teal underline underline-offset-2 transition hover:text-teal-70"
+        >
+          Entrar
+        </Link>
+      </p>
+    </form>
+  );
+}
+
+type PreferencesStepProps = {
+  selectedSlugs: OnboardingSlug[];
+  preferencesError: string | null;
+  formError: string | null;
+  submitting: boolean;
+  onToggle: (slug: OnboardingSlug) => void;
+  onBack: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+};
+
+function PreferencesStep({
+  selectedSlugs,
+  preferencesError,
+  formError,
+  submitting,
+  onToggle,
+  onBack,
+  onSubmit,
+}: PreferencesStepProps) {
+  const minimumReached = selectedSlugs.length >= MIN_CATEGORIES;
+
+  return (
+    <form className="flex flex-col" onSubmit={onSubmit} noValidate>
+      <StepBar step={2} />
+
+      <div className="mb-6">
+        <span className="text-sm font-bold text-teal-50">Só mais um passo</span>
+
+        <h1 className="mt-2 text-[1.75rem] font-extrabold leading-tight tracking-tight text-teal min-[600px]:text-[1.9rem]">
+          O que combina com você?
+        </h1>
+
+        <p className="mt-2 max-w-[23rem] text-sm leading-relaxed text-muted">
+          Escolha pelo menos {MIN_CATEGORIES} opções. Vamos usar seus interesses
+          para personalizar suas descobertas.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5 min-[600px]:gap-4 max-[359px]:grid-cols-1">
+        {ONBOARDING_CATEGORIES.map((category) => {
+          const selected = selectedSlugs.includes(category.slug);
+          const Icon = category.icon;
+
+          return (
+            <button
+              key={category.slug}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onToggle(category.slug)}
+              className={`flex min-h-16 min-w-0 items-center gap-2 rounded-xl border px-2.5 py-2.5 text-left font-semibold transition min-[600px]:min-h-[4.75rem] min-[600px]:gap-4 min-[600px]:rounded-2xl min-[600px]:px-5 min-[600px]:py-4 ${
+                selected
+                  ? "border-teal bg-teal text-white shadow-sm"
+                  : "border-teal/10 bg-white text-ink shadow-sm hover:border-teal/30 hover:shadow-md"
+              }`}
+            >
+              <span
+                className={`grid size-9 shrink-0 place-items-center rounded-lg transition min-[600px]:size-11 min-[600px]:rounded-xl ${
+                  selected ? "bg-white/15 text-white" : "bg-teal-10 text-teal"
+                }`}
+              >
+                <Icon
+                  className="size-5 min-[600px]:size-6"
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                />
+              </span>
+
+              <span className="min-w-0 whitespace-nowrap text-[0.76rem] min-[400px]:text-[0.82rem] min-[600px]:text-[0.95rem]">
+                {category.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <span className="text-xs font-medium text-teal-50">
+          {selectedSlugs.length} de {MIN_CATEGORIES} selecionadas
+        </span>
+
+        {minimumReached ? (
+          <span className="shrink-0 text-xs font-bold text-teal">
+            Tudo certo ✓
+          </span>
+        ) : null}
+      </div>
+
+      {preferencesError ? (
+        <p className="mt-3 text-sm font-semibold text-danger" role="alert">
+          {preferencesError}
+        </p>
+      ) : null}
+
+      {formError ? (
+        <p className="mt-3 text-sm font-semibold text-danger" role="alert">
+          {formError}
+        </p>
+      ) : null}
+
+      <div className="mt-7 flex gap-3 max-[359px]:flex-col-reverse">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={submitting}
+          className="inline-flex h-12 flex-1 items-center justify-center rounded-xl border border-teal/20 bg-white px-4 text-sm font-bold text-teal transition hover:bg-teal-10 focus:outline-none focus:ring-2 focus:ring-teal/20 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Voltar
+        </button>
+
+        <button
+          type="submit"
+          disabled={submitting || !minimumReached}
+          className="inline-flex h-12 flex-[1.6] cursor-pointer items-center justify-center whitespace-nowrap rounded-xl bg-teal px-4 text-sm font-bold text-white transition hover:bg-teal-70 focus:outline-none focus:ring-2 focus:ring-teal/20 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {submitting ? "Criando conta..." : "Criar minha conta"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function RegistrationSuccess({ name }: { name: string }) {
+  return (
+    <div className="flex flex-col gap-4" role="status">
+      <StepBar step={2} />
+
+      <span className="text-sm font-bold text-teal-50">Tudo certo!</span>
+
+      <h1 className="text-2xl font-extrabold tracking-tight text-teal">
+        Conta criada com sucesso
+      </h1>
+
+      <p className="leading-relaxed text-teal-50">
+        Olá, <strong>{name}</strong>. Sua conta está pronta para explorar o Bora
+        Vê.
+      </p>
+
+      <Link
+        href="/login"
+        className="mt-2 inline-flex h-12 items-center justify-center rounded-xl bg-teal px-5 text-sm font-bold text-white transition hover:bg-teal-70 focus:outline-none focus:ring-2 focus:ring-teal/20"
+      >
+        Entrar na minha conta
+      </Link>
     </div>
   );
 }
 
-function FieldError({ children }: { children: ReactNode }) {
-  return <small className="text-[0.8rem] font-semibold text-danger">{children}</small>;
+function StepBar({ step }: { step: 1 | 2 }) {
+  return (
+    <div
+      className="mb-5 grid grid-cols-2 gap-2"
+      aria-label={`Etapa ${step} de 2`}
+      role="progressbar"
+      aria-valuemin={1}
+      aria-valuemax={2}
+      aria-valuenow={step}
+    >
+      <span className="h-1.5 rounded-full bg-teal" />
+
+      <span
+        className={`h-1.5 rounded-full ${step === 2 ? "bg-teal" : "bg-step"}`}
+      />
+    </div>
+  );
+}
+
+function SocialDivider() {
+  return (
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3.5 text-[0.82rem] text-teal-50 before:h-px before:bg-teal/30 before:content-[''] after:h-px after:bg-teal/30 after:content-['']">
+      <span>ou continue com</span>
+    </div>
+  );
+}
+
+function FieldError({ id, children }: { id?: string; children: ReactNode }) {
+  return (
+    <small id={id} className="text-[0.8rem] font-semibold text-danger">
+      {children}
+    </small>
+  );
 }
 
 function SocialButton({
@@ -416,42 +766,14 @@ function SocialButton({
 }) {
   return (
     <button
-      className="grid size-10 place-items-center rounded-full border-0 bg-white text-teal shadow-[0_1px_3px_rgba(12,70,81,0.16)] transition hover:bg-[#f7f7f7]"
       type="button"
       title={`${label} — em breve`}
       aria-label={`Cadastrar com ${label} (em breve)`}
       onClick={() => onPick(label)}
+      className="grid size-10 place-items-center rounded-full bg-white text-teal shadow-[0_1px_3px_rgba(12,70,81,0.16)] transition hover:-translate-y-0.5 hover:bg-[#f7f7f7] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal/20"
     >
       {children}
     </button>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg className="size-[1.2rem]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <svg className="size-[1.2rem]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M3 3l18 18M9.9 9.9A3.1 3.1 0 0 0 12 15.1m0 0a3.1 3.1 0 0 0 2.9-4.1M6.1 6.4C4.1 7.8 2.5 12 2.5 12S6.2 18.5 12 18.5c2 0 3.7-.7 5.1-1.7M10.2 5.7C10.8 5.6 11.4 5.5 12 5.5 17.8 5.5 21.5 12 21.5 12s-.6 1.1-1.7 2.5"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
 
