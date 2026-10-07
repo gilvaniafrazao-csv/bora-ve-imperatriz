@@ -125,6 +125,31 @@ export class FakeSupabase {
           }
           return send(201, []);
         }
+        case 'POST rpc/replace_user_preferences': {
+          // Imita a função SQL: valida tudo antes de gravar (tudo ou nada) e
+          // sempre atualiza updated_at, inclusive quando só as categorias mudam.
+          const { p_user_id, p_category_ids, p_set_price_range, p_price_range } = body;
+          const invalid =
+            !this.users.has(p_user_id) ||
+            p_category_ids.some((id: string) => !CATEGORIES.some((c) => c.id === id));
+          if (invalid) {
+            return send(409, { code: '23503', message: 'violates foreign key constraint' });
+          }
+          const previous = this.preferences.get(p_user_id);
+          this.preferences.set(p_user_id, {
+            price_range: p_set_price_range ? p_price_range : (previous?.price_range ?? null),
+            updated_at: new Date().toISOString(),
+          });
+          this.links = this.links.filter(
+            (link) => link.user_id !== p_user_id || p_category_ids.includes(link.category_id),
+          );
+          for (const id of p_category_ids as string[]) {
+            if (!this.links.some((l) => l.user_id === p_user_id && l.category_id === id)) {
+              this.links.push({ user_id: p_user_id, category_id: id });
+            }
+          }
+          return send(204, null);
+        }
         case 'GET user_preference_categories': {
           const userId = eq(q.get('user_id'));
           return send(

@@ -74,6 +74,7 @@ describe('registrar preferências (PUT)', () => {
     }
     assert.equal(ctx.fake.links.length, 0);
     assert.equal(ctx.fake.preferences.size, 0);
+    assert.ok(!ctx.fake.requests.includes('POST rpc/replace_user_preferences'), 'nem chega ao banco');
   });
 
   it('usuário do token que não existe mais -> 401', async () => {
@@ -83,7 +84,7 @@ describe('registrar preferências (PUT)', () => {
   });
 
   it('falha do banco -> 503 sem vazar detalhes internos', async () => {
-    ctx.fake.failNext('POST', 'user_preferences');
+    ctx.fake.failNext('POST', 'rpc/replace_user_preferences');
     const res = await put({ categorySlugs: ['sushi', 'pizza', 'bar'] });
     assert.equal(res.status, 503);
     assert.equal(res.json.error.code, 'DATABASE_UNAVAILABLE');
@@ -160,11 +161,34 @@ describe('editar preferências (PUT repetido)', () => {
     assert.deepEqual((await get()).json.preferences.categorySlugs, ['bar', 'pizza', 'sushi']);
   });
 
-  it('falha ao gravar as novas não perde as antigas', async () => {
-    ctx.fake.failNext('POST', 'user_preference_categories');
-    const res = await put({ categorySlugs: ['churrasco', 'doces', 'hamburguer'] });
+  it('falha na gravação não altera nada: nem categorias, nem preço, nem updatedAt', async () => {
+    const antes = (await get()).json.preferences;
+    ctx.fake.failNext('POST', 'rpc/replace_user_preferences');
+    const res = await put({ categorySlugs: ['churrasco', 'doces', 'hamburguer'], priceRange: 'premium' });
     assert.equal(res.status, 503);
-    assert.deepEqual(ctx.fake.slugsOf(USER), ['bar', 'pizza', 'sushi']);
+    assert.deepEqual((await get()).json.preferences, antes);
+  });
+
+  it('updatedAt avança mesmo quando só as categorias mudam', async () => {
+    const antes = (await get()).json.preferences.updatedAt;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const res = await put({ categorySlugs: ['pizza', 'churrasco', 'doces'] });
+    assert.ok(Date.parse(res.json.preferences.updatedAt) > Date.parse(antes));
+    assert.equal(res.json.preferences.priceRange, 'moderado');
+  });
+
+  it('duas atualizações simultâneas terminam com um dos conjuntos inteiro, nunca misturado', async () => {
+    const a = ['sushi', 'pizza', 'bar'];
+    const b = ['hamburguer', 'churrasco', 'doces'];
+    // O fake é atômico por natureza; a garantia real é da função SQL, testada em
+    // supabase/tests/replace_user_preferences.test.sql. Aqui fica o contrato da API.
+    await Promise.all([put({ categorySlugs: a }), put({ categorySlugs: b })]);
+    const final = (await get()).json.preferences.categorySlugs;
+    assert.ok(
+      JSON.stringify(final) === JSON.stringify([...a].sort()) ||
+        JSON.stringify(final) === JSON.stringify([...b].sort()),
+      `estado misturado: ${final}`,
+    );
   });
 
   it('não mexe nas preferências de outro usuário', async () => {

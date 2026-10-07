@@ -86,7 +86,17 @@ Usa o test runner nativo do Node (`node:test`) via `tsx`, sem dependências extr
 | `tests/preferences.api.test.ts` | `GET`/`PUT /api/preferences`: autenticação, registro, consulta, edição, isolamento entre usuários e falhas do banco |
 | `tests/onboarding.api.test.ts` | Fluxo cadastro com interesses → login → consulta/edição, e rollback do cadastro |
 
-Para simular falha do banco num teste: `ctx.fake.failNext('POST', 'user_preferences')`. O fake só entende as consultas usadas hoje; se um módulo novo usar outra, estenda o `fakeSupabase.ts`. Ele **não** substitui um teste manual contra o Supabase real (RLS, constraints e triggers não são simulados).
+Para simular falha do banco num teste: `ctx.fake.failNext('POST', 'rpc/replace_user_preferences')`. O fake só entende as consultas usadas hoje; se um módulo novo usar outra, estenda o `fakeSupabase.ts`. Ele **não** substitui um teste manual contra o Supabase real (RLS, constraints e triggers não são simulados).
+
+### Teste da função SQL (Postgres real)
+
+A gravação atômica das preferências é feita pela função `replace_user_preferences` (migration `20261007120000_*`), que o fake só imita. Ela tem um teste próprio, que precisa de um PostgreSQL com as migrations aplicadas e não deixa dados (termina com `ROLLBACK`):
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/replace_user_preferences.test.sql
+```
+
+Cobre: registrar, trocar só as categorias (mantém o preço e atualiza `updated_at`), limpar/trocar o preço, **tudo ou nada** quando uma categoria é inválida, usuário inexistente, idempotência e permissões (só `service_role`).
 
 ## Cadastro (RF01 + RF03)
 

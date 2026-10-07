@@ -43,7 +43,7 @@ A conta só é criada no segundo “Bora lá!”, depois de escolher **pelo meno
 A issue pede testar "persistência/uso conforme definido no refinamento", mas o refinamento não está documentado no repositório. Interpretação adotada (**a confirmar com o time**):
 
 - **Runner:** `node:test` via `tsx` (`npm test`), sem dependências novas.
-- **Banco nos testes:** Supabase falso em memória (`backend/tests/helpers/fakeSupabase.ts`). Dá testes rápidos e sem credenciais (serve para CI), mas **não** simula RLS, constraints nem triggers; isso continua exigindo teste manual contra o Supabase real.
+- **Banco nos testes:** Supabase falso em memória (`backend/tests/helpers/fakeSupabase.ts`). Dá testes rápidos e sem credenciais (serve para CI), mas **não** simula RLS, constraints nem triggers; isso continua exigindo teste manual contra o Supabase real. A função SQL de gravação atômica das preferências tem teste próprio contra um PostgreSQL real (`supabase/tests/replace_user_preferences.test.sql`), que um teste de concorrência com `pgbench` complementou na revisão da PR #55 (0 violações em ~59 mil transações simultâneas, contra 15 de uma versão sem atomicidade).
 - **"Persistência":** o que foi salvo é devolvido pelo `GET`, a edição substitui o conjunto, o `PUT` é idempotente e uma falha no meio não apaga as categorias antigas.
 - **"Uso nas recomendações":** o contrato do `GET /api/preferences` (slugs ordenados, `priceRange`, `onboardingCompleted`) é o que a HOME-03 deve consumir; está coberto por testes.
 
