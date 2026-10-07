@@ -29,8 +29,15 @@ export function HomePage() {
   const [headerSearch, setHeaderSearch] = useState("");
   const [heroSearch, setHeroSearch] = useState("");
   const [region, setRegion] = useState("");
-  const [locationName, setLocationName] = useState("Localização");
+  const [locationName, setLocationName] = useState("Imperatriz");
   const [isLocating, setIsLocating] = useState(false);
+  const [showLocationMenu, setShowLocationMenu] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [citySearch, setCitySearch] = useState("");
+  const [coordinates, setCoordinates] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   function handleHeaderSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,6 +52,48 @@ export function HomePage() {
       search: heroSearch,
       region,
     });
+  }
+
+  function handleUseLocation() {
+    if (!navigator.geolocation) {
+      setLocationError("Seu navegador não oferece suporte à localização.");
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationError("");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+
+        setCoordinates({
+          latitude,
+          longitude,
+        });
+
+        setLocationName("Minha localização");
+        setIsLocating(false);
+        setShowLocationMenu(false);
+
+        console.log("Localização autorizada:", {
+          latitude,
+          longitude,
+        });
+      },
+      () => {
+        setLocationError(
+          "Não foi possível acessar sua localização. Verifique a permissão do navegador.",
+        );
+
+        setIsLocating(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000,
+      },
+    );
   }
 
   return (
@@ -75,31 +124,90 @@ export function HomePage() {
           </Link>
 
           {/* LOCALIZAÇÃO */}
-          <button
-            type="button"
-            className="
-              hidden
-              h-[38px]
-              shrink-0
-              items-center
-              gap-2
-              rounded-full
-              bg-white/10
-              px-4
-              text-[12px]
-              font-semibold
-              text-white
-              transition
-              hover:bg-white/15
-              md:flex
-            "
-          >
-            <MapPin size={14} />
+          <div className="relative hidden shrink-0 md:block">
+            <button
+              type="button"
+              onClick={() => setShowLocationMenu((current) => !current)}
+              className="
+      flex
+      h-[38px]
+      items-center
+      gap-2
+      rounded-full
+      bg-white/10
+      px-4
+      text-[12px]
+      font-semibold
+      text-white
+      transition
+      hover:bg-white/15
+    "
+            >
+              <MapPin size={14} />
 
-            <span>Imperatriz</span>
+              <span>{locationName}</span>
 
-            <ChevronDown size={10} />
-          </button>
+              <ChevronDown
+                size={10}
+                className={`transition-transform ${
+                  showLocationMenu ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {showLocationMenu && (
+              <div className="absolute left-0 top-full z-50 mt-3 w-[300px] rounded-2xl bg-white p-4 text-[#0b3f45] shadow-xl">
+                <button
+                  type="button"
+                  onClick={handleUseLocation}
+                  disabled={isLocating}
+                  className="flex w-full items-center gap-3 rounded-xl bg-[#f2f7f5] p-3 text-left transition hover:bg-[#e6f0ed] disabled:cursor-wait disabled:opacity-60"
+                >
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#dfff00]">
+                    <MapPin size={17} />
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-bold">
+                      {isLocating ? "Localizando..." : "Usar minha localização"}
+                    </p>
+
+                    <p className="mt-0.5 text-xs text-[#527176]">
+                      Encontrar opções perto de mim
+                    </p>
+                  </div>
+                </button>
+
+                <div className="mt-0">
+                  <label
+                    htmlFor="city-search"
+                    className="text-xs font-semibold text-[#0b3f45]"
+                  >
+                    Buscar outra cidade
+                  </label>
+
+                  <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#0b3f45]/10 bg-white px-3">
+                    <Search size={15} className="shrink-0 text-[#527176]" />
+
+                    <input
+                      id="city-search"
+                      type="text"
+                      value={citySearch}
+                      onChange={(event) => setCitySearch(event.target.value)}
+                      placeholder="Digite o nome da cidade"
+                      className="min-w-0 flex-1 bg-transparent py-3 text-sm text-[#0b3f45] outline-none placeholder:text-[#527176]/60"
+                    />
+                  </div>
+                </div>
+
+                {locationError && (
+                  <p className="mt-3 text-xs leading-5 text-red-600">
+                    {locationError}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* BUSCA DO HEADER */}
           <form
@@ -161,14 +269,14 @@ export function HomePage() {
           {/* NAVEGAÇÃO */}
           <nav className="ml-auto hidden items-center gap-7 lg:flex">
             <Link
-              href="#lugares"
+              href="/explorar?tipo=lugares"
               className="text-[12px] font-semibold text-white/85 transition hover:text-[#dfff00]"
             >
               Lugares
             </Link>
 
             <Link
-              href="#eventos"
+              href="/explorar?tipo=eventos"
               className="text-[12px] font-semibold text-white/85 transition hover:text-[#dfff00]"
             >
               Eventos
@@ -228,6 +336,111 @@ export function HomePage() {
             </Link>
           </div>
         </header>
+
+        {/* LOCALIZAÇÃO MOBILE */}
+        <div className="relative mx-auot w-full max-w-[1440px] px-5 pb-4 md:hidden">
+          <button
+            type="button"
+            onClick={() => setShowLocationMenu((current) => !current)}
+            className="
+      flex
+      h-[38px]
+      items-center
+      gap-2
+      rounded-full
+      bg-white/10
+      px-4
+      text-[12px]
+      font-semibold
+      text-white
+      transition
+      hover:bg-white/15
+    "
+          >
+            <MapPin size={14} />
+
+            <span>{locationName}</span>
+
+            <ChevronDown
+              size={10}
+              className={`transition-transform ${
+                showLocationMenu ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {showLocationMenu && (
+            <div className="absolute left-5 right-5 top-full z-50 mt-2 rounded-2xl bg-white p-4 text-[#0b3f45] shadow-xl">
+              <button
+                type="button"
+                onClick={handleUseLocation}
+                disabled={isLocating}
+                className="
+          flex
+          w-full
+          items-center
+          gap-3
+          rounded-xl
+          bg-[#f2f7f5]
+          p-3
+          text-left
+          transition
+          hover:bg-[#e6f0ed]
+          disabled:opacity-60
+        "
+              >
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#dfff00]">
+                  <MapPin size={17} />
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold">
+                    {isLocating ? "Localizando..." : "Usar minha localização"}
+                  </p>
+
+                  <p className="text-xs text-[#527176]">
+                    Encontrar opções perto de mim
+                  </p>
+                </div>
+              </button>
+
+              <div className="mt-4">
+                <label
+                  htmlFor="city-search-mobile"
+                  className="text-xs font-semibold"
+                >
+                  Buscar outra cidade
+                </label>
+
+                <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#0b3f45]/10 px-3">
+                  <Search size={15} className="shrink-0 text-[#527176]" />
+
+                  <input
+                    id="city-search-mobile"
+                    type="text"
+                    value={citySearch}
+                    onChange={(event) => setCitySearch(event.target.value)}
+                    placeholder="Digite o nome da cidade"
+                    className="
+              min-w-0
+              flex-1
+              bg-transparent
+              py-3
+              text-sm
+              text-[#0b3f45]
+              outline-none
+              placeholder:text-[#527176]/60
+            "
+                  />
+                </div>
+              </div>
+
+              {locationError && (
+                <p className="mt-3 text-xs text-red-600">{locationError}</p>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* HERO */}
         <div
@@ -456,7 +669,7 @@ export function HomePage() {
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
               >
-                <Trees size={12}/>
+                <Trees size={12} />
                 Lazer
               </button>
 
@@ -464,7 +677,7 @@ export function HomePage() {
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
               >
-                <Music size={12}/>
+                <Music size={12} />
                 Música ao Vivo
               </button>
 
@@ -472,7 +685,7 @@ export function HomePage() {
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
               >
-                <Utensils size={12}/>
+                <Utensils size={12} />
                 Hamburgueria
               </button>
             </div>
@@ -525,8 +738,8 @@ export function HomePage() {
                 text-[#dfff00]
                 shadow-md
               "
-            > 
-                <Sparkles size={14} className="shrink-0"/>
+            >
+              <Sparkles size={14} className="shrink-0" />
               <span>Destaque da Semana</span>
             </div>
 
@@ -574,14 +787,14 @@ export function HomePage() {
                     </h2>
 
                     <div className="mt-1.5 flex items-center gap-1 text-[12px] text-[#7c8788]">
-                      <MapPin size={10} fill="currentColor"/>
+                      <MapPin size={10} fill="currentColor" />
                       Beira-Rio, Imperatriz
                     </div>
                   </div>
 
                   <div className="inline-flex items-center gap-1 shrink-0 text-[12px] font-black text-[#f59e0b]">
-                    <Star size={14} fill="currentColor" strokeWidth="1.8"/>
-                    <span>4.9</span> 
+                    <Star size={14} fill="currentColor" strokeWidth="1.8" />
+                    <span>4.9</span>
                     <span className="text-[12px] font-bold">(128)</span>
                   </div>
                 </div>
@@ -634,7 +847,7 @@ export function HomePage() {
         "
             >
               <CategoryCard
-                icon= {Utensils}
+                icon={Utensils}
                 title="Restaurantes"
                 subtitle="84 locais"
                 iconBackground="#fff0c7"
@@ -933,7 +1146,7 @@ export function HomePage() {
           hover:bg-white/15
         "
             >
-              Ver agenda completa <ArrowRight size={14}/>
+              Ver agenda completa <ArrowRight size={14} />
             </button>
           </div>
 
@@ -1541,7 +1754,7 @@ function PlaceCard({
             shadow-sm
           "
         >
-          <Star size={12} fill="currentColor" className="text-[#f5a000]"/>
+          <Star size={12} fill="currentColor" className="text-[#f5a000]" />
 
           <span className="font-black text-[#f5a000]">{rating}</span>
 
@@ -1726,7 +1939,7 @@ function EventCard({
 
       <div className="mt-3 space-y-1.5">
         <div className="flex items-center gap-2 text-[12px] text-white/65">
-          <Clock size={12} className="shrink-0 text-[#dfff00]"/>
+          <Clock size={12} className="shrink-0 text-[#dfff00]" />
           <span>{schedule}</span>
         </div>
 
@@ -1766,7 +1979,7 @@ function EventCard({
             hover:text-[#dfff00]
           "
         >
-          Saiba Mais <ArrowRight size={12} className="shrink-0"/>
+          Saiba Mais <ArrowRight size={12} className="shrink-0" />
         </button>
       </div>
     </article>
@@ -1825,7 +2038,7 @@ function RouteCard({
         "
         style={{ backgroundColor: iconBackground }}
       >
-        <Icon size={21} strokeWidth={1.8} className="text-[#0b3f45]"/>
+        <Icon size={21} strokeWidth={1.8} className="text-[#0b3f45]" />
       </div>
 
       {/* LABEL */}
