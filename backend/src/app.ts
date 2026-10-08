@@ -1,11 +1,12 @@
-import cors from 'cors';
-import express, { Application } from 'express';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { env } from './config/env';
-import { authRouter } from './modules/auth/auth.routes';
-import { healthRouter } from './modules/health/health.routes';
-import { errorHandler, notFoundHandler } from './shared/http/errorHandler';
+import cors from "cors";
+import express, { Application } from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import { env } from "./config/env";
+import { authRouter } from "./modules/auth/auth.routes";
+import { healthRouter } from "./modules/health/health.routes";
+import { errorHandler, notFoundHandler } from "./shared/http/errorHandler";
+import { recommendationsRouter } from "./modules/recommendations/recommendations.routes";
 
 function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) {
@@ -15,7 +16,7 @@ function isAllowedOrigin(origin: string | undefined): boolean {
     return true;
   }
   try {
-    return new URL(origin).hostname.endsWith('.vercel.app');
+    return new URL(origin).hostname.endsWith(".vercel.app");
   } catch {
     return false;
   }
@@ -33,13 +34,16 @@ export function createApp(): Application {
     }),
   );
   app.use(express.json());
-  app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
+  app.use(morgan(env.nodeEnv === "development" ? "dev" : "combined"));
 
   app.use(healthRouter);
-  app.use('/api/auth', authRouter);
+  app.use("/api/auth", authRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
+
+  app.use("/api/auth", authRouter);
+  app.use("/api/recommendations", recommendationsRouter);
 
   return app;
 }
