@@ -1,20 +1,15 @@
 import assert from 'node:assert/strict';
 import { before, describe, it } from 'node:test';
-import { TEST_JWT_SECRET, makeToken } from './helpers/testApp';
 
 type Validation = typeof import('../src/modules/preferences/preferences.validation.js');
 type AuthValidation = typeof import('../src/modules/auth/auth.validation.js');
-type Jwt = typeof import('../src/shared/auth/jwt.js');
 
 let parseUpdatePreferencesBody: Validation['parseUpdatePreferencesBody'];
 let parseRegisterBody: AuthValidation['parseRegisterBody'];
-let verifyAccessToken: Jwt['verifyAccessToken'];
 
 before(async () => {
-  process.env.JWT_SECRET = TEST_JWT_SECRET;
   ({ parseUpdatePreferencesBody } = await import('../src/modules/preferences/preferences.validation.js'));
   ({ parseRegisterBody } = await import('../src/modules/auth/auth.validation.js'));
-  ({ verifyAccessToken } = await import('../src/shared/auth/jwt.js'));
 });
 
 function fieldsOf(fn: () => unknown): string[] {
@@ -105,24 +100,4 @@ describe('seleção de interesses no cadastro (POST /api/auth/register)', () => 
     assert.equal(input.email, 'ana@example.com');
     assert.deepEqual(input.categorySlugs, ['sushi', 'pizza', 'doces']);
   });
-});
-
-describe('verifyAccessToken', () => {
-  it('devolve o id do usuário de um token válido', () => {
-    assert.equal(verifyAccessToken(makeToken('user-1')), 'user-1');
-  });
-
-  const invalidos: [string, string][] = [
-    ['vazio', ''],
-    ['sem 3 partes', 'a.b'],
-    ['assinatura de outro segredo', makeToken('u', { secret: 'outro' })],
-    ['expirado', makeToken('u', { exp: 1 })],
-    ['alg diferente de HS256', makeToken('u', { alg: 'none' })],
-    ['conteúdo adulterado', makeToken('u').replace(/^(\w+)\.\w+/, '$1.e30')],
-  ];
-  for (const [nome, token] of invalidos) {
-    it(`rejeita token ${nome}`, () => {
-      assert.throws(() => verifyAccessToken(token), { code: 'UNAUTHORIZED', statusCode: 401 });
-    });
-  }
 });

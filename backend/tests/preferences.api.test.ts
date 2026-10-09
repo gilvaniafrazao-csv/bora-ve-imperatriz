@@ -36,11 +36,28 @@ describe('autenticação das rotas de preferências', () => {
 
   it('token inválido ou expirado -> 401 e nada é gravado', async () => {
     const corpo = { categorySlugs: ['sushi', 'pizza', 'bar'] };
-    for (const t of ['lixo', makeToken(USER, { exp: 1 }), makeToken(USER, { secret: 'outro' })]) {
-      assert.equal((await put(corpo, t)).status, 401);
+    const invalidos: [string, string][] = [
+      ['sem conteúdo', ''],
+      ['texto qualquer', 'lixo'],
+      ['sem 3 partes', 'a.b'],
+      ['assinado com outro segredo', makeToken(USER, { secret: 'outro' })],
+      ['expirado', makeToken(USER, { exp: 1 })],
+      ['sem expiração', makeToken(USER, { withoutExp: true })],
+      ['conteúdo adulterado', makeToken(USER).replace(/^(\w+)\.\w+/, '$1.e30')],
+    ];
+    for (const [nome, t] of invalidos) {
+      const res = await put(corpo, t);
+      assert.equal(res.status, 401, `token ${nome}`);
+      assert.equal(res.json.error.code, 'UNAUTHORIZED', `token ${nome}`);
     }
     assert.equal(ctx.fake.links.length, 0);
     assert.equal(ctx.fake.preferences.size, 0);
+  });
+
+  it('token válido é aceito e identifica o usuário certo', async () => {
+    await put({ categorySlugs: ['sushi', 'pizza', 'bar'] });
+    assert.deepEqual(ctx.fake.slugsOf(USER), ['bar', 'pizza', 'sushi']);
+    assert.deepEqual(ctx.fake.slugsOf(OUTRO), []);
   });
 
   it('esquema de autorização diferente de Bearer -> 401', async () => {

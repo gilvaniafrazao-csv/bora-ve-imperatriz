@@ -40,14 +40,15 @@ export async function startTestApp(): Promise<TestContext> {
   };
 }
 
-type TokenOptions = { exp?: number; alg?: string; secret?: string };
+type TokenOptions = { exp?: number; alg?: string; secret?: string; withoutExp?: boolean };
 
 /** Gera um JWT no mesmo formato de auth.service (HS256, `sub`, `exp`). */
 export function makeToken(userId: string, options: TokenOptions = {}): string {
   const { exp = Math.floor(Date.now() / 1000) + 600, alg = 'HS256', secret = TEST_JWT_SECRET } =
     options;
   const header = Buffer.from(JSON.stringify({ alg, typ: 'JWT' })).toString('base64url');
-  const payload = Buffer.from(JSON.stringify({ sub: userId, iat: 0, exp })).toString('base64url');
+  const claims = options.withoutExp ? { sub: userId, iat: 0 } : { sub: userId, iat: 0, exp };
+  const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
   const signature = createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url');
   return `${header}.${payload}.${signature}`;
 }
