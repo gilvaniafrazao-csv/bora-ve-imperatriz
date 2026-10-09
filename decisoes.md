@@ -35,7 +35,7 @@ A conta só é criada no segundo “Bora lá!”, depois de escolher **pelo meno
 
 - **`PUT` substitui o conjunto de categorias** (mínimo 3, mesmas 6 do onboarding) em vez de ter rotas separadas de criar/editar; isso já atende a edição da PREF-04. `priceRange` é opcional (`null` limpa, ausente mantém).
 - **Gravação atômica no banco.** O client do Supabase não expõe transações, então o `PUT` chama a função SQL `replace_user_preferences` (`supabase/migrations/20261007120000_replace_user_preferences.sql`) via `.rpc()`: faixa de preço e categorias são gravadas numa única transação (ou tudo, ou nada) e atualizações simultâneas do mesmo usuário são serializadas pelo lock da linha em `user_preferences`. `updated_at` é atualizado sempre, inclusive quando só as categorias mudam. A função só é executável pelo `service_role`. Resposta à revisão da PR #55; a primeira versão fazia várias escritas separadas.
-- **`requireAuth` mínimo** (`shared/http/requireAuth.ts` + `shared/auth/jwt.ts`) valida assinatura HS256 e expiração do JWT. Foi criado aqui porque a PREF-02 depende dele; a AUTH-06 (autorização por papel) deve estender, não reescrever.
+- **`requireAuth` único, o da PR #69.** A PREF-02 e as recomendações (PR #69) precisavam do mesmo middleware. Ficou o `shared/http/requireAuth.ts` da #69 (valida assinatura HS256 em tempo constante, expiração e `sub`; entrega o id em `req.userId`) e o arquivo desta PR é idêntico a ele, para as duas PRs não conflitarem nele. Cobre autenticação; **autorização por papel** (proprietário/administrador, AUTH-06) ainda não existe e deve estender esse arquivo.
 - **Consulta sem onboarding não é erro:** devolve lista vazia e `onboardingCompleted: false`.
 
 ## 14/09/2026 — Arquitetura em módulos

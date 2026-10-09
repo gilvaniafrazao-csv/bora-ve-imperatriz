@@ -1,26 +1,90 @@
-import { NextFunction, Request, Response } from 'express';
-import { verifyAccessToken } from '../auth/jwt';
-import { AppError } from '../errors/AppError';
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { NextFunction, Request, Response } from "express";
+import { env } from "../../config/env";
+import { AppError } from "../errors/AppError";
 
-/**
- * Exige `Authorization: Bearer <jwt>` e disponibiliza o id do usuário em
- * `res.locals.userId`. Use com `getAuthenticatedUserId(res)` no controller.
- */
-export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  const match = /^Bearer\s+(\S+)$/i.exec(req.header('authorization') ?? '');
-  if (!match) {
-    next(new AppError('Autenticação necessária.', 401, 'UNAUTHORIZED'));
-    return;
+interface TokenPayload {
+  sub: string;
+  iat: number;
+  exp: number;
+}
+
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
+function unauthorized(): AppError {
+  return new AppError("Você precisa estar autenticado.", 401, "UNAUTHORIZED");
+}
+
+function verifyToken(token: string): TokenPayload {
+  if (!env.jwtSecret) {
+    throw new AppError(
+      "Não foi possível validar a autenticação.",
+      503,
+      "AUTH_MISCONFIGURED",
+    );
+  }
+
+  const parts = token.split(".");
+
+  if (parts.length !== 3) {
+    throw unauthorized();
+  }
+
+  const [header, payload, signature] = parts;
+
+  const expectedSignature = createHmac("sha256", env.jwtSecret)
+    .update(`${header}.${payload}`)
+    .digest("base64url");
+
+  const receivedBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+
+  if (
+    receivedBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(receivedBuffer, expectedBuffer)
+  ) {
+    throw unauthorized();
   }
 
   try {
-    res.locals.userId = verifyAccessToken(match[1]);
-    next();
-  } catch (error) {
-    next(error);
+    const decoded = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8"),
+    ) as TokenPayload;
+
+    const now = Math.floor(Date.now() / 1000);
+
+    if (!decoded.sub || !decoded.exp || decoded.exp <= now) {
+      throw unauthorized();
+    }
+
+    return decoded;
+  } catch {
+    throw unauthorized();
   }
 }
 
-export function getAuthenticatedUserId(res: Response): string {
-  return res.locals.userId as string;
+export function requireAuth(
+  req: AuthenticatedRequest,
+  _res: Response,
+  next: NextFunction,
+): void {
+  const authorization = req.headers.authorization;
+
+  if (!authorization?.startsWith("Bearer ")) {
+    throw unauthorized();
+  }
+
+  const token = authorization.slice("Bearer ".length).trim();
+
+  if (!token) {
+    throw unauthorized();
+  }
+
+  const payload = verifyToken(token);
+
+  req.userId = payload.sub;
+
+  next();
 }
