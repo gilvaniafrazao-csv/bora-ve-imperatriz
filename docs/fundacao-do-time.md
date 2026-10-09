@@ -20,7 +20,7 @@ Pesquisa e definição da experiência do produto: apoiar a elaboração das his
 - Disponibilidade comum: segunda, terça e sexta
 - Prazo de resposta: até 24 horas
 - Horário-limite da daily assíncrona nos dias úteis sem aula: segunda 21h, terça 16h e sexta 16h
-- Registro de decisões: arquivo decisoes.md no repositório do GitHub, com entradas por data (ex: ## 04/08 — decisão de manter escopo sem roteiro personalizado).
+- Registro de decisões: arquivo `docs/decisoes.md` no repositório do GitHub, com entradas organizadas por data.
 - Atualização do quadro: antes de cada aula (quarta e quinta-feira)
 - Tratamento de bloqueios: avisar no slack assim que identificado + marcar o item como bloqueado no GitHub Projects
 
@@ -49,7 +49,7 @@ Pesquisa e definição da experiência do produto: apoiar a elaboração das his
 
 **Acesso à evidência:** A equipe pretende conversar com pessoas que vivenciam o problema, incluindo moradores, visitantes recentes de Imperatriz e pessoas que costumam procurar restaurantes, bares, eventos e opções de lazer pela internet. Também serão realizadas conversas com proprietários ou responsáveis por estabelecimentos e eventos, buscando entender as dificuldades relacionadas à divulgação e atração de novos clientes. Como complemento, serão analisadas avaliações públicas e discussões em plataformas como Google Maps e redes sociais.
 
-**Resultado desejado:** 
+**Resultado desejado:**
 
 Facilitar a descoberta de novos estabelecimentos, eventos e opções de lazer;
 Reduzir o tempo necessário para decidir onde sair;
@@ -57,10 +57,10 @@ Oferecer recomendações mais adequadas aos interesses e localização do usuár
 Entender se estabelecimentos percebem valor em utilizar uma plataforma regional para aumentar sua visibilidade;
 Validar se existe interesse em mecanismos de promoção e benefícios oferecidos pela plataforma.
 
-**Jornada crítica inicial:** 
+**Jornada crítica inicial:**
 Criar uma conta → informar preferências → permitir acesso à localização → visualizar recomendações → abrir o perfil de um estabelecimento/evento → visualizar informações → iniciar uma rota.
 
-**Escopo inicial:** 
+**Escopo inicial:**
 Cadastro e login;
 Onboarding com preferências do usuário;
 Página inicial personalizada;
@@ -73,14 +73,15 @@ Perfil básico do estabelecimento;
 Área básica para o proprietário gerenciar informações do estabelecimento;
 Métricas básicas de visualização e interação.
 
-**Não escopo (por enquanto):** 
+**Não escopo (por enquanto):**
 Programa de fidelidade;
 Reservas;
 Inteligência artificial avançada para recomendações;
 Sistema avançado de anúncios e campanhas patrocinadas;
 Aplicativo nativo para Android e iOS.
 
-**Premissas:** 
+**Premissas:**
+
 - Existe uma quantidade relevante de estabelecimentos, eventos e opções de lazer em Imperatriz para justificar uma experiência de descoberta regional;
 - Usuários têm dificuldade para descobrir opções além dos lugares que já conhecem;
 - Usuários valorizam recomendações baseadas em seus interesses e localização;
@@ -88,7 +89,7 @@ Aplicativo nativo para Android e iOS.
 - A geolocalização pode facilitar a descoberta de opções próximas;
 - Estabelecimentos podem perceber valor em ferramentas de divulgação dentro da plataforma.
 
-**Restrições:** 
+**Restrições:**
 Prazo limitado ao semestre letivo;
 Equipe de 4 integrantes conciliando o projeto com outras disciplinas;
 Orçamento limitado para infraestrutura, APIs e serviços externos;
@@ -111,11 +112,9 @@ Crescimento excessivo do escopo durante o desenvolvimento.
 - Stack proposta: A stack ainda está em definição. A equipe pretende avaliar uma arquitetura baseada em aplicação web responsiva, considerando tecnologias já conhecidas pelos integrantes, como React/Next.js, TypeScript e Supabase. A decisão final será tomada após a definição das histórias de usuário, entidades, requisitos técnicos e necessidades de infraestrutura do MVP.
 
 - Justificativa: A escolha da stack será orientada pela necessidade de desenvolver um MVP funcional dentro do prazo do semestre, considerando o conhecimento técnico da equipe, simplicidade de desenvolvimento, custos de infraestrutura, facilidade de integração com APIs externas e possibilidade de evolução futura do produto.
-  
 - Maior incerteza técnica: A principal incerteza técnica está na integração com APIs de mapas e na obtenção de informações atualizadas dos estabelecimentos, considerando custos, limites de uso, disponibilidade e qualidade dos dados.
-  
 - Primeiro experimento técnico, se necessário: Desenvolver um protótipo capaz de obter a localização do usuário, exibir estabelecimentos próximos em um mapa e apresentar informações básicas como nome, categoria, horário de funcionamento e distância.
-  
+
 ## 6. Sprint 1
 
 - Objetivo da sprint: Levantar evidências sobre o problema (conversas com pessoas que já visitaram/moram em Imperatriz) e organizar a estrutura inicial do projeto (quadro, repositório, primeiras categorias de lugares a mapear).
