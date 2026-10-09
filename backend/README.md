@@ -46,7 +46,8 @@ Resposta esperada:
 | `npm run build`     | Compila TypeScript para `dist/`                 |
 | `npm start`         | Roda a versão compilada (`dist/server.js`)      |
 | `npm run lint`      | Executa o ESLint                                |
-| `npm run typecheck` | Verifica tipos sem gerar build                  |
+| `npm run typecheck` | Verifica tipos (src + tests) sem gerar build    |
+| `npm test`          | Roda os testes automatizados (`tests/`)         |
 
 ## Estrutura de pastas
 
@@ -58,7 +59,8 @@ backend/src/
 ├── shared/                # erros e HTTP comuns
 └── modules/
     ├── health/            # GET /health
-    └── auth/              # POST /api/auth/register e POST /api/auth/login
+    ├── auth/              # POST /api/auth/register e POST /api/auth/login
+    └── preferences/       # GET e PUT /api/preferences (autenticado)
 ```
 
 Arquitetura completa: [`docs/arquitetura.md`](../docs/arquitetura.md).
@@ -69,6 +71,32 @@ Arquitetura completa: [`docs/arquitetura.md`](../docs/arquitetura.md).
 - **Erros:** lance `AppError` — o `errorHandler` converte para `{ "error": { "code", "message" } }`.
 - **Senhas (RNF05):** hash bcrypt no serviço; o repositório só persiste `password_hash`.
 - **Banco:** somente nos `*.repository.ts`, via `getSupabaseClient()` (Service Role no backend).
+
+## Testes
+
+```bash
+npm test
+```
+
+Usa o test runner nativo do Node (`node:test`) via `tsx`, sem dependências extras e **sem precisar de Supabase nem de `.env`**: os testes sobem a API real contra um Supabase/PostgREST falso em memória (`tests/helpers/fakeSupabase.ts`).
+
+| Arquivo | O que cobre |
+| --- | --- |
+| `tests/validation.test.ts` | Validação da seleção de interesses (cadastro e preferências) e do JWT |
+| `tests/preferences.api.test.ts` | `GET`/`PUT /api/preferences`: autenticação, registro, consulta, edição, isolamento entre usuários e falhas do banco |
+| `tests/onboarding.api.test.ts` | Fluxo cadastro com interesses → login → consulta/edição, e rollback do cadastro |
+
+Para simular falha do banco num teste: `ctx.fake.failNext('POST', 'rpc/replace_user_preferences')`. O fake só entende as consultas usadas hoje; se um módulo novo usar outra, estenda o `fakeSupabase.ts`. Ele **não** substitui um teste manual contra o Supabase real (RLS, constraints e triggers não são simulados).
+
+### Teste da função SQL (Postgres real)
+
+A gravação atômica das preferências é feita pela função `replace_user_preferences` (migration `20261007120000_*`), que o fake só imita. Ela tem um teste próprio, que precisa de um PostgreSQL com as migrations aplicadas e não deixa dados (termina com `ROLLBACK`):
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/replace_user_preferences.test.sql
+```
+
+Cobre: registrar, trocar só as categorias (mantém o preço e atualiza `updated_at`), limpar/trocar o preço, **tudo ou nada** quando uma categoria é inválida, usuário inexistente, idempotência e permissões (só `service_role`).
 
 ## Cadastro (RF01 + RF03)
 
@@ -116,3 +144,43 @@ Resposta `200`:
 ```
 
 E-mail ou senha inválidos retornam `401` com o código `INVALID_CREDENTIALS`. O token é um JWT HS256 (7 dias) assinado com `JWT_SECRET`.
+
+## Preferências (RF03)
+
+Rotas autenticadas: envie `Authorization: Bearer <token>` (o `token` do login). Sem token, token inválido ou expirado retornam `401 UNAUTHORIZED`.
+
+> **Requer a migration `supabase/migrations/20261007120000_replace_user_preferences.sql`** aplicada no banco (função `replace_user_preferences`, usada pelo `PUT` para gravar tudo numa única transação). Sem ela o `PUT` responde `503`. Aplique com `supabase db push` ou colando o SQL no editor do Supabase.
+
+### `PUT /api/preferences` — registrar / editar
+
+Substitui o conjunto de categorias do usuário (serve para o onboarding e para a edição posterior).
+
+```json
+{
+  "categorySlugs": ["sushi", "pizza", "bar"],
+  "priceRange": "moderado"
+}
+```
+
+- `categorySlugs` (obrigatório): pelo menos **3** entre `sushi`, `pizza`, `hamburguer`, `bar`, `churrasco`, `doces`. Duplicados são ignorados.
+- `priceRange` (opcional): `economico` | `moderado` | `premium`. Ausente mantém o valor atual; `null` limpa.
+
+Resposta `200`:
+
+```json
+{
+  "message": "Preferências salvas com sucesso.",
+  "preferences": {
+    "categorySlugs": ["bar", "pizza", "sushi"],
+    "priceRange": "moderado",
+    "onboardingCompleted": true,
+    "updatedAt": "..."
+  }
+}
+```
+
+Campos inválidos retornam `400 VALIDATION_ERROR` com `error.details`.
+
+### `GET /api/preferences` — consultar
+
+Resposta `200` com `{ "preferences": { ... } }` no mesmo formato acima. Usuário que ainda não escolheu nada recebe `categorySlugs: []`, `priceRange: null` e `onboardingCompleted: false` (não é erro). `categorySlugs` vem ordenado por slug para a resposta ser estável; é essa lista que o motor de recomendação deve consumir.

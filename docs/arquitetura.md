@@ -38,7 +38,7 @@ Infra compartilhada fica fora dos módulos:
 
 - `config/` — env e client Supabase
 - `shared/errors` — `AppError`
-- `shared/http` — `asyncHandler`, `errorHandler`
+- `shared/http` — `asyncHandler`, `errorHandler`, `requireAuth` (rotas autenticadas; o id do usuário fica em `req.userId`)
 
 Não force todas as camadas em todo módulo. Health só tem rota. Login reutiliza `modules/auth` (`POST /api/auth/login`).
 
