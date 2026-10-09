@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { env } from './config/env';
 import { authRouter } from './modules/auth/auth.routes';
 import { healthRouter } from './modules/health/health.routes';
+import { preferencesRouter } from './modules/preferences/preferences.routes';
 import { errorHandler, notFoundHandler } from './shared/http/errorHandler';
 
 function isAllowedOrigin(origin: string | undefined): boolean {
@@ -37,6 +38,7 @@ export function createApp(): Application {
 
   app.use(healthRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api/preferences', preferencesRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
