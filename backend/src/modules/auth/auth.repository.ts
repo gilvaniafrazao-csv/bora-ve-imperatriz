@@ -21,11 +21,18 @@ function toDatabaseUnavailable(): AppError {
   );
 }
 
+/*
+ * Busca por igualdade exata, não por ILIKE: no ILIKE, `_` e `%` são curingas
+ * (`joao_silva@x.com` casaria com `joaoXsilva@x.com`, gerando falso "e-mail já
+ * cadastrado" no cadastro e erro no login). A API sempre normaliza o e-mail
+ * para minúsculas antes de gravar e de buscar (auth.validation.ts), então a
+ * comparação exata é suficiente.
+ */
 export async function findUserIdByEmail(email: string): Promise<string | null> {
   const { data, error } = await getSupabaseClient()
     .from('users')
     .select('id')
-    .ilike('email', email)
+    .eq('email', email.toLowerCase())
     .maybeSingle<{ id: string }>();
 
   if (error) {
@@ -39,7 +46,7 @@ export async function findAuthUserByEmail(email: string): Promise<AuthUserRow | 
   const { data, error } = await getSupabaseClient()
     .from('users')
     .select('id, name, email, created_at, password_hash')
-    .ilike('email', email)
+    .eq('email', email.toLowerCase())
     .maybeSingle<AuthUserRow>();
 
   if (error) {

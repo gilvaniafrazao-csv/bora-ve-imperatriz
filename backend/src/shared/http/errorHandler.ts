@@ -26,6 +26,21 @@ export function errorHandler(
     return;
   }
 
+  // Erros do body-parser (corpo inválido/grande) são culpa do cliente, não 500.
+  const parseError = err as { type?: string } | null;
+  if (parseError?.type === 'entity.parse.failed') {
+    res.status(400).json({
+      error: { code: 'INVALID_JSON', message: 'O corpo da requisição não é um JSON válido.' },
+    });
+    return;
+  }
+  if (parseError?.type === 'entity.too.large') {
+    res.status(413).json({
+      error: { code: 'PAYLOAD_TOO_LARGE', message: 'O corpo da requisição é grande demais.' },
+    });
+    return;
+  }
+
   console.error('[unhandled error]', err);
   res.status(500).json({
     error: {
