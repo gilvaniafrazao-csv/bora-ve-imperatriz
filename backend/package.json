@@ -4,13 +4,13 @@
   "description": "Backend do Bora Vê Imperatriz — API REST em Node.js/TypeScript integrada ao Supabase (PostgreSQL).",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
-    "lint": "eslint . --ext .ts",
-    "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/**/*.test.ts"
-  },
+  "dev": "tsx watch src/server.ts",
+  "build": "tsc -p tsconfig.json",
+  "start": "node dist/server.js",
+  "lint": "eslint . --ext .ts",
+  "typecheck": "tsc --noEmit -p tsconfig.test.json",
+  "test": "tsx --test tests/*.test.ts"
+},
   "engines": {
     "node": "22.x"
   },
