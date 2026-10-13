@@ -1,13 +1,13 @@
 "use client";
-
 import Link from "next/link";
+import { buildSearchUrl } from "@/lib/search-routing";
+import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import {
   ArrowRight,
   Beer,
   CalendarDays,
   Check,
-  ChevronDown,
   Clock,
   Heart,
   MapPin,
@@ -24,68 +24,58 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-
 export function HomePage() {
+  const router = useRouter();
   const [headerSearch, setHeaderSearch] = useState("");
   const [heroSearch, setHeroSearch] = useState("");
+  const [searchType, setSearchType] = useState<"lugares" | "eventos">(
+    "lugares",
+  );
   const [region, setRegion] = useState("");
-  const [locationName, setLocationName] = useState("Imperatriz");
   const [isLocating, setIsLocating] = useState(false);
-  const [showLocationMenu, setShowLocationMenu] = useState(false);
   const [locationError, setLocationError] = useState("");
-  const [citySearch, setCitySearch] = useState("");
   const [coordinates, setCoordinates] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
-
   function handleHeaderSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    console.log("Busca do header:", headerSearch);
+    router.push(buildSearchUrl(headerSearch));
   }
-
   function handleHeroSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    console.log({
-      search: heroSearch,
-      region,
-    });
+    const params = new URLSearchParams(
+      buildSearchUrl(heroSearch, searchType).split("?")[1],
+    );
+    if (region.trim() && region !== "Perto de mim") {
+      params.set("regiao", region.trim());
+    }
+    if (coordinates && region === "Perto de mim") {
+      params.set("lat", String(coordinates.latitude));
+      params.set("lon", String(coordinates.longitude));
+    }
+    router.push(`/explorar?${params.toString()}`);
   }
-
   function handleUseLocation() {
     if (!navigator.geolocation) {
       setLocationError("Seu navegador não oferece suporte à localização.");
       return;
     }
-
     setIsLocating(true);
     setLocationError("");
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
-
         setCoordinates({
-          latitude,
-          longitude,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
         });
-
-        setLocationName("Minha localização");
+        setRegion("Perto de mim");
         setIsLocating(false);
-        setShowLocationMenu(false);
-
-        console.log("Localização autorizada:", {
-          latitude,
-          longitude,
-        });
       },
       () => {
         setLocationError(
           "Não foi possível acessar sua localização. Verifique a permissão do navegador.",
         );
-
         setIsLocating(false);
       },
       {
@@ -95,7 +85,6 @@ export function HomePage() {
       },
     );
   }
-
   return (
     <main className="min-h-screen bg-[#f8f5ed] text-[#0b3f45]">
       {/* HEADER + HERO */}
@@ -122,97 +111,12 @@ export function HomePage() {
               className="h-auto w-[130px] lg:w-[145px]"
             />
           </Link>
-
           {/* LOCALIZAÇÃO */}
-          <div className="relative hidden shrink-0 md:block">
-            <button
-              type="button"
-              onClick={() => setShowLocationMenu((current) => !current)}
-              className="
-      flex
-      h-[38px]
-      items-center
-      gap-2
-      rounded-full
-      bg-white/10
-      px-4
-      text-[12px]
-      font-semibold
-      text-white
-      transition
-      hover:bg-white/15
-    "
-            >
-              <MapPin size={14} />
-
-              <span>{locationName}</span>
-
-              <ChevronDown
-                size={10}
-                className={`transition-transform ${
-                  showLocationMenu ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {showLocationMenu && (
-              <div className="absolute left-0 top-full z-50 mt-3 w-[300px] rounded-2xl bg-white p-4 text-[#0b3f45] shadow-xl">
-                <button
-                  type="button"
-                  onClick={handleUseLocation}
-                  disabled={isLocating}
-                  className="flex w-full items-center gap-3 rounded-xl bg-[#f2f7f5] p-3 text-left transition hover:bg-[#e6f0ed] disabled:cursor-wait disabled:opacity-60"
-                >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#dfff00]">
-                    <MapPin size={17} />
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-bold">
-                      {isLocating ? "Localizando..." : "Usar minha localização"}
-                    </p>
-
-                    <p className="mt-0.5 text-xs text-[#527176]">
-                      Encontrar opções perto de mim
-                    </p>
-                  </div>
-                </button>
-
-                <div className="mt-0">
-                  <label
-                    htmlFor="city-search"
-                    className="text-xs font-semibold text-[#0b3f45]"
-                  >
-                    Buscar outra cidade
-                  </label>
-
-                  <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#0b3f45]/10 bg-white px-3">
-                    <Search size={15} className="shrink-0 text-[#527176]" />
-
-                    <input
-                      id="city-search"
-                      type="text"
-                      value={citySearch}
-                      onChange={(event) => setCitySearch(event.target.value)}
-                      placeholder="Digite o nome da cidade"
-                      className="min-w-0 flex-1 bg-transparent py-3 text-sm text-[#0b3f45] outline-none placeholder:text-[#527176]/60"
-                    />
-                  </div>
-                </div>
-
-                {locationError && (
-                  <p className="mt-3 text-xs leading-5 text-red-600">
-                    {locationError}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
           {/* BUSCA DO HEADER */}
           <form
             onSubmit={handleHeaderSearch}
             className="
+              overflow-visible
               hidden
               h-[40px]
               min-w-0
@@ -228,7 +132,6 @@ export function HomePage() {
             "
           >
             <Search size={15} />
-
             <input
               type="text"
               value={headerSearch}
@@ -245,7 +148,6 @@ export function HomePage() {
                 placeholder:text-white/55
               "
             />
-
             <button
               type="submit"
               className="
@@ -265,7 +167,6 @@ export function HomePage() {
               Buscar
             </button>
           </form>
-
           {/* NAVEGAÇÃO */}
           <nav className="ml-auto hidden items-center gap-7 lg:flex">
             <Link
@@ -274,23 +175,19 @@ export function HomePage() {
             >
               Lugares
             </Link>
-
             <Link
               href="/explorar?tipo=eventos"
               className="text-[12px] font-semibold text-white/85 transition hover:text-[#dfff00]"
             >
               Eventos
             </Link>
-
             <span className="h-5 w-px bg-white/20" />
-
             <Link
               href="/login"
               className="text-[12px] font-bold text-white transition hover:text-[#dfff00]"
             >
               Entrar
             </Link>
-
             <Link
               href="/cadastro"
               className="
@@ -313,13 +210,11 @@ export function HomePage() {
               Criar Conta
             </Link>
           </nav>
-
           {/* MOBILE */}
           <div className="ml-auto flex items-center gap-3 lg:hidden">
             <Link href="/login" className="text-[12px] font-bold text-white">
               Entrar
             </Link>
-
             <Link
               href="/cadastro"
               className="
@@ -336,112 +231,6 @@ export function HomePage() {
             </Link>
           </div>
         </header>
-
-        {/* LOCALIZAÇÃO MOBILE */}
-        <div className="relative mx-auot w-full max-w-[1440px] px-5 pb-4 md:hidden">
-          <button
-            type="button"
-            onClick={() => setShowLocationMenu((current) => !current)}
-            className="
-      flex
-      h-[38px]
-      items-center
-      gap-2
-      rounded-full
-      bg-white/10
-      px-4
-      text-[12px]
-      font-semibold
-      text-white
-      transition
-      hover:bg-white/15
-    "
-          >
-            <MapPin size={14} />
-
-            <span>{locationName}</span>
-
-            <ChevronDown
-              size={10}
-              className={`transition-transform ${
-                showLocationMenu ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          {showLocationMenu && (
-            <div className="absolute left-5 right-5 top-full z-50 mt-2 rounded-2xl bg-white p-4 text-[#0b3f45] shadow-xl">
-              <button
-                type="button"
-                onClick={handleUseLocation}
-                disabled={isLocating}
-                className="
-          flex
-          w-full
-          items-center
-          gap-3
-          rounded-xl
-          bg-[#f2f7f5]
-          p-3
-          text-left
-          transition
-          hover:bg-[#e6f0ed]
-          disabled:opacity-60
-        "
-              >
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#dfff00]">
-                  <MapPin size={17} />
-                </div>
-
-                <div>
-                  <p className="text-sm font-bold">
-                    {isLocating ? "Localizando..." : "Usar minha localização"}
-                  </p>
-
-                  <p className="text-xs text-[#527176]">
-                    Encontrar opções perto de mim
-                  </p>
-                </div>
-              </button>
-
-              <div className="mt-4">
-                <label
-                  htmlFor="city-search-mobile"
-                  className="text-xs font-semibold"
-                >
-                  Buscar outra cidade
-                </label>
-
-                <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#0b3f45]/10 px-3">
-                  <Search size={15} className="shrink-0 text-[#527176]" />
-
-                  <input
-                    id="city-search-mobile"
-                    type="text"
-                    value={citySearch}
-                    onChange={(event) => setCitySearch(event.target.value)}
-                    placeholder="Digite o nome da cidade"
-                    className="
-              min-w-0
-              flex-1
-              bg-transparent
-              py-3
-              text-sm
-              text-[#0b3f45]
-              outline-none
-              placeholder:text-[#527176]/60
-            "
-                  />
-                </div>
-              </div>
-
-              {locationError && (
-                <p className="mt-3 text-xs text-red-600">{locationError}</p>
-              )}
-            </div>
-          )}
-        </div>
-
         {/* HERO */}
         <div
           className="
@@ -466,10 +255,10 @@ export function HomePage() {
           <div className="max-w-[650px]">
             <h1
               className="
-                text-[46px]
+                text-[38px]
                 font-black
-                leading-[1]
-                tracking-[-2px]
+                leading-[1.08]
+                tracking-[-1.5px]
                 text-white
                 sm:text-[54px]
                 lg:text-[62px]
@@ -477,46 +266,19 @@ export function HomePage() {
             >
               Bora explorar os
               <br />
-              melhores{" "}
-              <span className="relative inline-block text-[#dfff00]">
-                lugares
-                <span
-                  className="
-                    absolute
-                    -bottom-0
-                    left-0
-                    h-[3px]
-                    w-full
-                    rounded-full
-                    bg-[#dfff00]
-                  "
-                />
-              </span>
-              <br />e{" "}
-              <span className="relative inline-block text-[#35d6cc]">
+              melhores <span className="relative text-[#dfff00]">lugares</span>
+              <br />e <span className="relative text-[#35d6cc]">
                 eventos
-                <span
-                  className="
-                    absolute
-                    -bottom-0
-                    left-0
-                    h-[3px]
-                    w-full
-                    rounded-full
-                    bg-[#35d6cc]
-                  "
-                />
               </span>{" "}
               da
               <br />
               cidade?
             </h1>
-
             <p
               className="
-                mt-7
+                mt-3
                 max-w-[570px]
-                text-[16px]
+                text-[14px]
                 leading-[1.55]
                 text-white/65
                 sm:text-[15px]
@@ -525,12 +287,37 @@ export function HomePage() {
               Descubra restaurantes incríveis, barzinhos animados, atrações ao
               ar livre, feiras e a agenda cultural completa.
             </p>
-
             {/* BUSCA PRINCIPAL */}
+            <div className="mt-8 flex items-center gap-3 lg:hidden">
+              <button
+                type="button"
+                onClick={() => setSearchType("lugares")}
+                aria-pressed={searchType === "lugares"}
+                className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
+                  searchType === "lugares"
+                    ? "bg-white text-[#0b3f45]"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                }`}
+              >
+                Lugares
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchType("eventos")}
+                aria-pressed={searchType === "eventos"}
+                className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
+                  searchType === "eventos"
+                    ? "bg-white text-[#0b3f45]"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                }`}
+              >
+                Eventos
+              </button>
+            </div>
             <form
               onSubmit={handleHeroSearch}
               className="
-                mt-8
+                mt-5
                 flex
                 w-full
                 max-w-[660px]
@@ -559,13 +346,16 @@ export function HomePage() {
                 >
                   O que procura?
                 </label>
-
                 <input
                   id="hero-search"
                   type="text"
                   value={heroSearch}
                   onChange={(event) => setHeroSearch(event.target.value)}
-                  placeholder="Restaurante, chopp, pizza..."
+                  placeholder={
+                    searchType === "eventos"
+                      ? "Shows, festivais, feiras..."
+                      : "Restaurante, chopp, pizza..."
+                  }
                   className="
                     mt-1
                     w-full
@@ -578,45 +368,49 @@ export function HomePage() {
                   "
                 />
               </div>
-
               {/* DIVISÓRIA */}
               <span className="hidden h-[38px] w-px bg-[#dfe4e1] sm:block" />
-
-              {/* REGIÃO */}
+              {/* REGIÃO / LOCALIZAÇÃO */}
               <div className="min-w-0 flex-1 px-4 py-2 sm:py-0">
                 <label
                   htmlFor="hero-region"
-                  className="
-                    block
-                    text-[10px]
-                    font-black
-                    uppercase
-                    tracking-[0.4px]
-                    text-[#607174]
-                  "
+                  className="block text-[10px] font-black uppercase tracking-[0.4px] text-[#607174]"
                 >
-                  Região / Bairro
+                  Região / bairro
                 </label>
-
-                <input
-                  id="hero-region"
-                  type="text"
-                  value={region}
-                  onChange={(event) => setRegion(event.target.value)}
-                  placeholder="Perto de mim"
-                  className="
-                    mt-1
-                    w-full
-                    bg-transparent
-                    text-[11px]
-                    font-medium
-                    text-[#173f44]
-                    outline-none
-                    placeholder:text-[#9aa5a5]
-                  "
-                />
+                <div className="mt-1 flex items-center gap-2">
+                  <input
+                    id="hero-region"
+                    type="text"
+                    value={region}
+                    onChange={(event) => {
+                      setRegion(event.target.value);
+                      setCoordinates(null);
+                    }}
+                    placeholder="Cidade, região ou bairro..."
+                    className="min-w-0 flex-1 bg-transparent text-[11px] font-medium text-[#173f44] outline-none placeholder:text-[#9aa5a5]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUseLocation}
+                    disabled={isLocating}
+                    title="Usar minha localização"
+                    aria-label={
+                      isLocating
+                        ? "Obtendo localização"
+                        : "Usar minha localização"
+                    }
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#eef5f2] text-[#0b3f45] transition hover:bg-[#e1eeea] disabled:opacity-50"
+                  >
+                    <MapPin size={17} />
+                  </button>
+                </div>
+                {locationError && (
+                  <p role="alert" className="mt-2 text-xs text-red-600">
+                    {locationError}
+                  </p>
+                )}
               </div>
-
               {/* EXPLORAR */}
               <button
                 type="submit"
@@ -642,7 +436,6 @@ export function HomePage() {
                 Explorar
               </button>
             </form>
-
             {/* MAIS BUSCADOS */}
             <div
               className="
@@ -656,7 +449,6 @@ export function HomePage() {
               "
             >
               <span className="mr-1">Mais buscados:</span>
-
               <button
                 type="button"
                 className=" inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
@@ -664,7 +456,6 @@ export function HomePage() {
                 <Martini size={12} />
                 Happy Hour
               </button>
-
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
@@ -672,7 +463,6 @@ export function HomePage() {
                 <Trees size={12} />
                 Lazer
               </button>
-
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
@@ -680,7 +470,6 @@ export function HomePage() {
                 <Music size={12} />
                 Música ao Vivo
               </button>
-
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
@@ -690,7 +479,6 @@ export function HomePage() {
               </button>
             </div>
           </div>
-
           {/* DESTAQUE DA SEMANA */}
           <div className="relative mx-auto w-full max-w-[520px] lg:mx-0">
             {/* ETIQUETA PRINCIPAL */}
@@ -718,7 +506,6 @@ export function HomePage() {
               <Zap size={14} fill="currentColor" />
               BORA VÊ O QUE TÁ ROLANDO!
             </div>
-
             {/* ETIQUETA SECUNDÁRIA */}
             <div
               className="
@@ -742,7 +529,6 @@ export function HomePage() {
               <Sparkles size={14} className="shrink-0" />
               <span>Destaque da Semana</span>
             </div>
-
             {/* CARD */}
             <article
               className="
@@ -758,7 +544,6 @@ export function HomePage() {
             >
               {/* ÁREA DA IMAGEM */}
               <div className="h-[285px] w-full bg-[#f4f4f0]" />
-
               {/* INFORMAÇÕES */}
               <div className="absolute bottom-0 left-0 w-full bg-white px-6 py-5">
                 <div className="flex items-end justify-between gap-4">
@@ -774,7 +559,6 @@ export function HomePage() {
                     >
                       Gastronomia Regional
                     </span>
-
                     <h2
                       className="
                         mt-1
@@ -783,15 +567,13 @@ export function HomePage() {
                         text-[#173f44]
                       "
                     >
-                      Sabor &amp; Pôr do Sol na Orla
+                      Sabor & Pôr do Sol na Orla
                     </h2>
-
                     <div className="mt-1.5 flex items-center gap-1 text-[12px] text-[#7c8788]">
                       <MapPin size={10} fill="currentColor" />
                       Beira-Rio, Imperatriz
                     </div>
                   </div>
-
                   <div className="inline-flex items-center gap-1 shrink-0 text-[12px] font-black text-[#f59e0b]">
                     <Star size={14} fill="currentColor" strokeWidth="1.8" />
                     <span>4.9</span>
@@ -803,7 +585,6 @@ export function HomePage() {
           </div>
         </div>
       </section>
-
       {/* CATEGORIAS + LUGARES */}
       <section
         id="lugares"
@@ -818,7 +599,6 @@ export function HomePage() {
               <h2 className="text-[22px] font-black text-[#0b3f45]">
                 Categorias de Descoberta
               </h2>
-
               <button
                 type="button"
                 className="
@@ -834,7 +614,6 @@ export function HomePage() {
                 Ver todos
               </button>
             </div>
-
             {/* CARDS DAS CATEGORIAS */}
             <div
               className="
@@ -852,35 +631,30 @@ export function HomePage() {
                 subtitle="84 locais"
                 iconBackground="#fff0c7"
               />
-
               <CategoryCard
                 icon={Martini}
                 title="Bares & Pubs"
                 subtitle="42 locais"
                 iconBackground="#caf5f6"
               />
-
               <CategoryCard
                 icon={Trees}
                 title="Lazer"
                 subtitle="29 locais"
                 iconBackground="#d7f7e9"
               />
-
               <CategoryCard
                 icon={Music}
                 title="Shows & Eventos"
                 subtitle="18 esta semana"
                 iconBackground="#eee0ff"
               />
-
               <CategoryCard
                 icon={ShoppingBag}
                 title="Compras & Feiras"
                 subtitle="36 locais"
                 iconBackground="#ffe0e5"
               />
-
               <CategoryCard
                 icon={Sparkles}
                 title="Experiências"
@@ -889,7 +663,6 @@ export function HomePage() {
               />
             </div>
           </div>
-
           {/* =====================================================
         LUGARES BOMBANDO
     ===================================================== */}
@@ -917,7 +690,6 @@ export function HomePage() {
                 >
                   Mais populares na cidade
                 </span>
-
                 <h2
                   className="
               mt-1
@@ -932,7 +704,6 @@ export function HomePage() {
                   Lugares Bombando em Imperatriz
                 </h2>
               </div>
-
               {/* FILTROS */}
               <div
                 className="
@@ -961,7 +732,6 @@ export function HomePage() {
                 >
                   Todos
                 </button>
-
                 <button
                   type="button"
                   className="
@@ -978,7 +748,6 @@ export function HomePage() {
                 >
                   Gastronomia
                 </button>
-
                 <button
                   type="button"
                   className="
@@ -995,7 +764,6 @@ export function HomePage() {
                 >
                   Vida Noturna
                 </button>
-
                 <button
                   type="button"
                   className="
@@ -1014,7 +782,6 @@ export function HomePage() {
                 </button>
               </div>
             </div>
-
             {/* CARDS */}
             <div
               className="
@@ -1037,7 +804,6 @@ export function HomePage() {
                 price="$$$ • Regional"
                 status="Aberto agora"
               />
-
               <PlaceCard
                 badge="COCKTAIL BAR"
                 badgeClass="bg-[#3bd5cc] text-[#0b3f45]"
@@ -1049,7 +815,6 @@ export function HomePage() {
                 price="$$ • Pub & Drinks"
                 status="Abre às 18h"
               />
-
               <PlaceCard
                 badge="LAZER GRÁTIS"
                 badgeClass="bg-[#dfff00] text-[#0b3f45]"
@@ -1061,7 +826,6 @@ export function HomePage() {
                 price="Gratuito"
                 status="24h"
               />
-
               <PlaceCard
                 badge="CULTURA & ARTE"
                 badgeClass="bg-[#8b35e8] text-white"
@@ -1105,7 +869,6 @@ export function HomePage() {
               >
                 Agenda da Semana
               </span>
-
               <h2
                 className="
             mt-3
@@ -1117,15 +880,13 @@ export function HomePage() {
             md:text-[32px]
           "
               >
-                Eventos &amp; Shows em Imperatriz
+                Eventos & Shows em Imperatriz
               </h2>
-
               <p className="mt-2 text-[14px] text-white/55">
                 Fique por dentro das festas, feiras, festivais e apresentações
                 que vão rolar nos próximos dias.
               </p>
             </div>
-
             <button
               type="button"
               className="
@@ -1149,7 +910,6 @@ export function HomePage() {
               Ver agenda completa <ArrowRight size={14} />
             </button>
           </div>
-
           {/* CARDS */}
           <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
             <EventCard
@@ -1163,7 +923,6 @@ export function HomePage() {
               price="Entrada Gratuita"
               priceClass="text-[#dfff00]"
             />
-
             <EventCard
               day="12"
               category="GASTRONOMIA"
@@ -1175,7 +934,6 @@ export function HomePage() {
               price="Acesso Livre"
               priceClass="text-white/70"
             />
-
             <EventCard
               day="15"
               category="STAND-UP COMEDY"
@@ -1190,7 +948,6 @@ export function HomePage() {
           </div>
         </div>
       </section>
-
       {/* =========================================================
     ROTEIROS
 ========================================================= */}
@@ -1222,7 +979,6 @@ export function HomePage() {
               >
                 Guias Temáticos
               </span>
-
               <h2
                 className="
             mt-1
@@ -1237,12 +993,10 @@ export function HomePage() {
                 Roteiros para Curtir Imperatriz
               </h2>
             </div>
-
             <p className="text-[12px] text-[#879292]">
               Sugestões de passeios prontas para você aproveitar
             </p>
           </div>
-
           {/* CARDS */}
           <div className="mt-9 grid grid-cols-1 gap-6 lg:grid-cols-3">
             <RouteCard
@@ -1255,7 +1009,6 @@ export function HomePage() {
               infoLeft="4 paradas"
               infoRight="~3 horas"
             />
-
             <RouteCard
               icon={Utensils}
               iconBackground="#d7f7e9"
@@ -1266,7 +1019,6 @@ export function HomePage() {
               infoLeft="5 locais"
               infoRight="$$ Variado"
             />
-
             <RouteCard
               icon={Beer}
               iconBackground="#eee0ff"
@@ -1327,7 +1079,6 @@ export function HomePage() {
               >
                 ★ Sua experiência completa
               </span>
-
               <h2
                 className="
             mt-5
@@ -1348,7 +1099,6 @@ export function HomePage() {
                 <br />
                 seu jeito?
               </h2>
-
               <p
                 className="
             mt-4
@@ -1361,7 +1111,6 @@ export function HomePage() {
                 Crie sua conta em menos de 1 minuto para salvar favoritos,
                 personalizar seus interesses e não perder nada.
               </p>
-
               {/* BENEFÍCIOS */}
               <div
                 className="
@@ -1375,21 +1124,18 @@ export function HomePage() {
               >
                 <span className="flex items-center gap-1.5 text-[12px] font-bold text-[#dfff00]">
                   <Check size={12} />
-                  Salvar lugares &amp; eventos
+                  Salvar lugares & eventos
                 </span>
-
                 <span className="flex items-center gap-1.5 text-[12px] font-bold text-[#dfff00]">
                   <Check size={12} />
                   Personalizar categorias
                 </span>
-
                 <span className="flex items-center gap-1.5 text-[12px] font-bold text-[#dfff00]">
                   <Check size={12} />
                   100% Gratuito
                 </span>
               </div>
             </div>
-
             {/* BOTÃO */}
             <div className="shrink-0 md:pr-2">
               <Link
@@ -1418,7 +1164,6 @@ export function HomePage() {
           </div>
         </div>
       </section>
-
       {/* =========================================================
     FOOTER
 ========================================================= */}
@@ -1444,7 +1189,6 @@ export function HomePage() {
                   className="h-auto w-[145px]"
                 />
               </Link>
-
               <p
                 className="
             mt-3
@@ -1458,7 +1202,6 @@ export function HomePage() {
                 experiências urbanas.
               </p>
             </div>
-
             {/* NAVEGAÇÃO */}
             <div>
               <h3
@@ -1472,29 +1215,25 @@ export function HomePage() {
               >
                 Navegação
               </h3>
-
               <nav className="mt-4 flex flex-col items-start gap-2.5">
                 <Link
                   href="#lugares"
                   className="text-[12px] text-white/55 transition hover:text-white"
                 >
-                  Lugares &amp; Restaurantes
+                  Lugares & Restaurantes
                 </Link>
-
                 <Link
                   href="#eventos"
                   className="text-[12px] text-white/55 transition hover:text-white"
                 >
                   Agenda de Eventos
                 </Link>
-
                 <Link
                   href="#roteiros"
                   className="text-[12px] text-white/55 transition hover:text-white"
                 >
                   Roteiros Locais
                 </Link>
-
                 <Link
                   href="#sobre"
                   className="text-[12px] text-white/55 transition hover:text-white"
@@ -1503,7 +1242,6 @@ export function HomePage() {
                 </Link>
               </nav>
             </div>
-
             {/* ESTABELECIMENTOS */}
             <div>
               <h3
@@ -1517,7 +1255,6 @@ export function HomePage() {
               >
                 Para estabelecimentos
               </h3>
-
               <p
                 className="
             mt-4
@@ -1529,7 +1266,6 @@ export function HomePage() {
               >
                 Quer cadastrar seu restaurante ou evento no Bora Vê?
               </p>
-
               <button
                 type="button"
                 className="
@@ -1557,7 +1293,6 @@ export function HomePage() {
               </button>
             </div>
           </div>
-
           {/* LINHA INFERIOR */}
           <div
             className="
@@ -1580,14 +1315,12 @@ export function HomePage() {
     </main>
   );
 }
-
 type CategoryCardProps = {
   icon: LucideIcon;
   title: string;
   subtitle: string;
   iconBackground: string;
 };
-
 function CategoryCard({
   icon: Icon,
   title,
@@ -1635,7 +1368,6 @@ function CategoryCard({
       >
         <Icon size={20} strokeWidth={1.8} />
       </span>
-
       <span
         className="
           mt-3
@@ -1647,12 +1379,10 @@ function CategoryCard({
       >
         {title}
       </span>
-
       <span className="mt-1 text-[12px] text-[#8b9696]">{subtitle}</span>
     </button>
   );
 }
-
 type PlaceCardProps = {
   badge: string;
   badgeClass: string;
@@ -1665,7 +1395,6 @@ type PlaceCardProps = {
   status: string;
   special?: boolean;
 };
-
 function PlaceCard({
   badge,
   badgeClass,
@@ -1712,7 +1441,6 @@ function PlaceCard({
         >
           {badge}
         </span>
-
         {/* FAVORITO */}
         <button
           type="button"
@@ -1736,7 +1464,6 @@ function PlaceCard({
         >
           <Heart size={16} />
         </button>
-
         {/* NOTA */}
         <div
           className="
@@ -1755,13 +1482,10 @@ function PlaceCard({
           "
         >
           <Star size={12} fill="currentColor" className="text-[#f5a000]" />
-
           <span className="font-black text-[#f5a000]">{rating}</span>
-
           <span className="text-[#a0aaaa]">({reviews})</span>
         </div>
       </div>
-
       {/* CONTEÚDO */}
       <div className="flex min-h-[205px] flex-col px-5 py-5">
         <h3
@@ -1774,7 +1498,6 @@ function PlaceCard({
         >
           {title}
         </h3>
-
         <div
           className="
             mt-2
@@ -1786,10 +1509,8 @@ function PlaceCard({
           "
         >
           <MapPin size={10} />
-
           <span>{location}</span>
         </div>
-
         <p
           className="
             mt-3
@@ -1800,7 +1521,6 @@ function PlaceCard({
         >
           {description}
         </p>
-
         {/* RODAPÉ DO CARD */}
         <div
           className="
@@ -1823,7 +1543,6 @@ function PlaceCard({
           >
             {price}
           </span>
-
           <span
             className={`
               flex
@@ -1837,7 +1556,6 @@ function PlaceCard({
             {!special && (
               <span className="h-[6px] w-[6px] rounded-full bg-current" />
             )}
-
             {status}
           </span>
         </div>
@@ -1856,7 +1574,6 @@ type EventCardProps = {
   price: string;
   priceClass: string;
 };
-
 function EventCard({
   day,
   category,
@@ -1904,10 +1621,8 @@ function EventCard({
           `}
         >
           <span className="text-[10px] leading-none">OUT</span>
-
           <span className="mt-1 text-[22px] leading-none">{day}</span>
         </div>
-
         {/* CATEGORIA */}
         <span
           className={`
@@ -1923,7 +1638,6 @@ function EventCard({
           {category}
         </span>
       </div>
-
       {/* CONTEÚDO */}
       <h3
         className="
@@ -1936,19 +1650,16 @@ function EventCard({
       >
         {title}
       </h3>
-
       <div className="mt-3 space-y-1.5">
         <div className="flex items-center gap-2 text-[12px] text-white/65">
           <Clock size={12} className="shrink-0 text-[#dfff00]" />
           <span>{schedule}</span>
         </div>
-
         <div className="flex items-center gap-2 text-[12px] text-white/50">
           <MapPin size={12} className="shrink-0 text-[#35d6cc]" />
           <span>{location}</span>
         </div>
       </div>
-
       {/* RODAPÉ */}
       <div
         className="
@@ -1965,7 +1676,6 @@ function EventCard({
         <span className={`text-[12px] font-semibold ${priceClass}`}>
           {price}
         </span>
-
         <button
           type="button"
           className="
@@ -1995,7 +1705,6 @@ type RouteCardProps = {
   infoLeft: string;
   infoRight: string;
 };
-
 function RouteCard({
   icon: Icon,
   iconBackground,
@@ -2040,7 +1749,6 @@ function RouteCard({
       >
         <Icon size={21} strokeWidth={1.8} className="text-[#0b3f45]" />
       </div>
-
       {/* LABEL */}
       <span
         className={`
@@ -2054,7 +1762,6 @@ function RouteCard({
       >
         {label}
       </span>
-
       {/* TÍTULO */}
       <h3
         className="
@@ -2067,7 +1774,6 @@ function RouteCard({
       >
         {title}
       </h3>
-
       {/* DESCRIÇÃO */}
       <p
         className="
@@ -2079,7 +1785,6 @@ function RouteCard({
       >
         {description}
       </p>
-
       {/* INFORMAÇÕES */}
       <div
         className="
@@ -2098,7 +1803,6 @@ function RouteCard({
           <MapPin size={12} />
           {infoLeft}
         </span>
-
         <span className="flex items-center gap-1.5">
           <Clock size={12} />
           {infoRight}

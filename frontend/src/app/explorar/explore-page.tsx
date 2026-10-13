@@ -10,9 +10,10 @@ import {
   Star,
   UserPlus,
 } from "lucide-react";
-import { FormEvent, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { FormEvent, useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { buildSearchUrl } from "@/lib/search-routing";
 
 const categories = [
   "Todos",
@@ -137,12 +138,24 @@ const events = [
 ];
 
 export function ExplorePage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const contentType =
     searchParams.get("tipo") === "eventos" ? "eventos" : "lugares";
-  const [search, setSearch] = useState("");
-  const [submittedSearch, setSubmittedSearch] = useState("");
+  const initialSearch = searchParams.get("busca") ?? "";
+
+  const [search, setSearch] = useState(initialSearch);
+  const [submittedSearch, setSubmittedSearch] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState("Todos");
+
+  const urlSearch = searchParams.get("busca") ?? "";
+
+  useEffect(() => {
+    setSearch(urlSearch);
+    setSubmittedSearch(urlSearch);
+    setSelectedCategory("Todos");
+  }, [urlSearch, contentType]);
+
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState("");
   const [maxDistance, setMaxDistance] = useState(20);
@@ -155,7 +168,12 @@ export function ExplorePage() {
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmittedSearch(search.trim());
+
+    const term = search.trim();
+    const destination = buildSearchUrl(term, contentType);
+
+    setSubmittedSearch(term);
+    router.push(destination);
   }
 
   const filteredPlaces = places.filter((place) => {
@@ -248,33 +266,6 @@ export function ExplorePage() {
             />
           </Link>
 
-          {/* LOCALIZAÇÃO */}
-          <button
-            type="button"
-            className="
-        hidden
-        h-[38px]
-        shrink-0
-        items-center
-        gap-2
-        rounded-full
-        bg-white/10
-        px-4
-        text-[12px]
-        font-semibold
-        text-white
-        transition
-        hover:bg-white/15
-        md:flex
-      "
-          >
-            <MapPin size={14} />
-
-            <span>Imperatriz</span>
-
-            <ChevronDown size={10} />
-          </button>
-
           {/* BUSCA */}
           <form
             onSubmit={handleSearch}
@@ -334,6 +325,13 @@ export function ExplorePage() {
 
           {/* NAVEGAÇÃO */}
           <nav className="ml-auto hidden items-center gap-7 lg:flex">
+            <Link
+              href="/home"
+              className="text-[12px] font-semibold text-white transition-colors hover:text-[#dfff00]"
+            >
+              Início
+            </Link>
+
             <Link
               href="/explorar?tipo=lugares"
               className={`text-[12px] font-semibold transition ${
@@ -820,7 +818,7 @@ export function ExplorePage() {
                         setSubmittedSearch("");
                         setSelectedCategory("Todos");
                       }}
-                      className="mt-5 rounded-xl bg-lime px-5 py-2.5 text-sm font-bold text-teal"
+                      className="mt-5 rounded-xl bg-blue px-5 py-2.5 text-sm font-bold text-teal-70 transition-colors hover:bg-[#C4E2ED]"
                     >
                       Limpar busca
                     </button>
