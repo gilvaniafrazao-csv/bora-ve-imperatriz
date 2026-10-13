@@ -6,15 +6,18 @@ import { env } from './config/env';
 import { authRouter } from './modules/auth/auth.routes';
 import { healthRouter } from './modules/health/health.routes';
 import { preferencesRouter } from './modules/preferences/preferences.routes';
+import { recommendationsRouter } from './modules/recommendations/recommendations.routes';
 import { errorHandler, notFoundHandler } from './shared/http/errorHandler';
 
 function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) {
     return true;
   }
+
   if (env.corsOrigin.includes(origin)) {
     return true;
   }
+
   try {
     return new URL(origin).hostname.endsWith('.vercel.app');
   } catch {
@@ -26,6 +29,7 @@ export function createApp(): Application {
   const app = express();
 
   app.use(helmet());
+
   app.use(
     cors({
       origin(origin, callback) {
@@ -33,12 +37,14 @@ export function createApp(): Application {
       },
     }),
   );
+
   app.use(express.json());
   app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
 
   app.use(healthRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/preferences', preferencesRouter);
+  app.use('/api/recommendations', recommendationsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
