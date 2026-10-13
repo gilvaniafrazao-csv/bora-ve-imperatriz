@@ -72,7 +72,7 @@ export function parseRegisterBody(body: unknown): RegisterInput {
   };
 }
 
-function parseCategorySlugs(
+export function parseCategorySlugs(
   value: unknown,
   errors: FieldError[],
 ): RegisterInput['categorySlugs'] {
