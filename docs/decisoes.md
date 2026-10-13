@@ -1,5 +1,10 @@
 # Registro de Decisões
 
+## 07/10/2026 — Busca de e-mail exata e erros de corpo da requisição
+
+- **E-mail:** cadastro e login passam a buscar por igualdade exata (`.eq`) em vez de `ILIKE`. No `ILIKE`, `_` e `%` são curingas: `joao_silva@x.com` casava com `joaoXsilva@x.com`, gerando falso "e-mail já cadastrado" (409) no cadastro e erro (503) no login quando dois e-mails casavam entre si. A API sempre normaliza o e-mail para minúsculas antes de gravar e de buscar, então a comparação exata basta. Consequência: e-mails inseridos **com maiúsculas direto no banco** (fora da API) deixam de ser encontrados; devem ser gravados em minúsculas.
+- **Corpo inválido:** JSON malformado agora responde `400 INVALID_JSON` e corpo acima do limite `413 PAYLOAD_TOO_LARGE`, em vez de `500`.
+
 ## 14/09/2026 — Modelagem inicial do banco (MVP)
 
 Decisões tomadas na estrutura inicial do PostgreSQL/Supabase (`docs/modelagem-banco.md` e `supabase/migrations/20260914120000_initial_schema.sql`):
