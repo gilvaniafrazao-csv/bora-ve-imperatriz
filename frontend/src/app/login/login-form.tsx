@@ -87,13 +87,6 @@ export function LoginForm() {
     setHint(`Login com ${label} em breve.`);
   }
 
-  function onForgotPassword() {
-    setFormError(null);
-    setHint(
-      "A recuperação de senha estará disponível em breve. Por enquanto, tente entrar novamente.",
-    );
-  }
-
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -270,13 +263,12 @@ export function LoginForm() {
               </label>
 
               {/* Recuperação */}
-              <button
-                type="button"
-                onClick={onForgotPassword}
-                className="-mt-1 self-end rounded-md text-[0.82rem] font-semibold text-teal-50 transition hover:text-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+              <Link
+              href="/esqueci-senha"
+              className="-mt-1 self-end rounded-md text-[0.82rem] font-semibold text-teal-50 transition hover:text-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
               >
                 Esqueci minha senha
-              </button>
+              </Link>
 
               {/* Erro geral */}
               {formError ? (

@@ -140,3 +140,48 @@ export function parseLoginBody(body: unknown): LoginInput {
     password: password as string,
   };
 }
+
+export function parseForgotPasswordBody(body: unknown): { email: string } {
+  const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+  const emailRaw = asTrimmedString(payload.email);
+
+  if (!emailRaw || !EMAIL_REGEX.test(emailRaw) || emailRaw.length > 254) {
+    throw new AppError('Dados inválidos.', 400, 'VALIDATION_ERROR', [
+      { field: 'email', message: 'Informe um e-mail válido.' },
+    ]);
+  }
+
+  return { email: emailRaw.toLowerCase() };
+}
+
+export function parseResetPasswordBody(body: unknown): { token: string; newPassword: string } {
+  const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+  const errors: FieldError[] = [];
+
+  const token = asTrimmedString(payload.token);
+  const newPassword = typeof payload.newPassword === 'string' ? payload.newPassword : null;
+
+  if (!token) {
+    errors.push({ field: 'token', message: 'Link de recuperação inválido.' });
+  }
+
+  if (newPassword === null || newPassword.length === 0) {
+    errors.push({ field: 'newPassword', message: 'Informe a nova senha.' });
+  } else if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    errors.push({
+      field: 'newPassword',
+      message: `A senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`,
+    });
+  } else if (newPassword.length > MAX_PASSWORD_LENGTH) {
+    errors.push({
+      field: 'newPassword',
+      message: `A senha deve ter no máximo ${MAX_PASSWORD_LENGTH} caracteres.`,
+    });
+  }
+
+  if (errors.length > 0) {
+    throw new AppError('Dados inválidos.', 400, 'VALIDATION_ERROR', errors);
+  }
+
+  return { token: token as string, newPassword: newPassword as string };
+}

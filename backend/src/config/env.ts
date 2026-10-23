@@ -23,6 +23,10 @@ export const env = {
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
 
   jwtSecret: process.env.JWT_SECRET,
+  smtpHost: process.env.SMTP_HOST ?? '127.0.0.1',
+  smtpPort: Number(process.env.SMTP_PORT ?? 54325),
+  mailFrom: process.env.MAIL_FROM ?? 'Bora Ve <nao-responda@boraveimperatriz.local>',
+  frontendUrl: (process.env.FRONTEND_URL ?? 'http://localhost:3000').replace(/\/+$/, ''),
 };
 
 export function assertSupabaseEnv(): { url: string; serviceRoleKey: string } {
