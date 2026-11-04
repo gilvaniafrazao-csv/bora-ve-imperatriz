@@ -11,9 +11,17 @@ export const CATEGORIES = ['sushi', 'pizza', 'hamburguer', 'bar', 'churrasco', '
   (slug, i) => ({ id: `00000000-0000-0000-0000-00000000000${i + 1}`, slug }),
 );
 
-type UserRow = { id: string; name: string; email: string; password_hash: string; created_at: string };
+type UserRow = { id: string; name: string; email: string; password_hash: string | null; created_at: string };
 type PreferencesRow = { price_range: string | null; updated_at: string };
 type Link = { user_id: string; category_id: string };
+type IdentityRow = {
+  id: string;
+  user_id: string;
+  provider: string;
+  provider_subject: string;
+  email: string | null;
+  created_at: string;
+};
 
 const eq = (value: string | null) => (value ?? '').replace(/^(eq|ilike)\./, '');
 const inList = (value: string | null) =>
@@ -22,6 +30,7 @@ const inList = (value: string | null) =>
 export class FakeSupabase {
   users = new Map<string, UserRow>();
   preferences = new Map<string, PreferencesRow>();
+  identities: IdentityRow[] = [];
   links: Link[] = [];
   requests: string[] = [];
   /** `"METHOD tabela"` → próxima chamada responde 500 (uma vez). */
@@ -41,6 +50,7 @@ export class FakeSupabase {
   reset(): void {
     this.users.clear();
     this.preferences.clear();
+    this.identities = [];
     this.links = [];
     this.requests = [];
     this.failures.clear();
@@ -93,8 +103,15 @@ export class FakeSupabase {
           return send(200, CATEGORIES.filter((c) => slugs.includes(c.slug)));
         }
         case 'GET users': {
-          const email = eq(q.get('email')).toLowerCase();
-          const found = [...this.users.values()].filter((u) => u.email.toLowerCase() === email);
+          let found = [...this.users.values()];
+          if (q.get('id')) {
+            const id = eq(q.get('id'));
+            found = found.filter((user) => user.id === id);
+          }
+          if (q.get('email')) {
+            const email = eq(q.get('email')).toLowerCase();
+            found = found.filter((user) => user.email.toLowerCase() === email);
+          }
           return send(200, found);
         }
         case 'POST users': {
@@ -104,8 +121,41 @@ export class FakeSupabase {
           return send(201, wantsObject ? row : [row]);
         }
         case 'DELETE users': {
-          this.users.delete(eq(q.get('id')));
+          const id = eq(q.get('id'));
+          this.users.delete(id);
+          this.identities = this.identities.filter((identity) => identity.user_id !== id);
           return send(204, null);
+        }
+        case 'GET user_identities': {
+          const provider = eq(q.get('provider'));
+          const subject = eq(q.get('provider_subject'));
+          const found = this.identities.filter(
+            (identity) =>
+              (!q.get('provider') || identity.provider === provider) &&
+              (!q.get('provider_subject') || identity.provider_subject === subject),
+          );
+          return send(200, found);
+        }
+        case 'POST user_identities': {
+          if (
+            this.identities.some(
+              (identity) =>
+                identity.provider === body.provider &&
+                identity.provider_subject === body.provider_subject,
+            )
+          ) {
+            return send(409, { code: '23505', message: 'duplicate key' });
+          }
+          const row: IdentityRow = {
+            id: `identity-${this.identities.length + 1}`,
+            created_at: new Date().toISOString(),
+            user_id: body.user_id,
+            provider: body.provider,
+            provider_subject: body.provider_subject,
+            email: body.email ?? null,
+          };
+          this.identities.push(row);
+          return send(201, wantsObject ? row : [row]);
         }
         case 'GET user_preferences': {
           const row = this.preferences.get(eq(q.get('user_id')));

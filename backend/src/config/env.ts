@@ -23,6 +23,10 @@ export const env = {
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
 
   jwtSecret: process.env.JWT_SECRET,
+
+  // Chave da Google Maps Platform. Fica só no backend — o navegador nunca a recebe.
+  // Opcional no boot: rotas de lugares respondem 503 enquanto estiver vazia.
+  googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
 };
 
 export function assertSupabaseEnv(): { url: string; serviceRoleKey: string } {

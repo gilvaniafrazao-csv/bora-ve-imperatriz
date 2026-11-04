@@ -2,7 +2,9 @@
 import Link from "next/link";
 import { buildSearchUrl } from "@/lib/search-routing";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { ApiError } from "@/lib/api";
+import { searchPlaces, type PlaceSummary } from "@/lib/places";
 import {
   ArrowRight,
   Beer,
@@ -24,6 +26,47 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
+
+const placeFilters = [
+  { id: "todos", label: "Todos", query: "restaurantes e bares" },
+  { id: "gastronomia", label: "Gastronomia", query: "restaurante" },
+  { id: "noite", label: "Vida Noturna", query: "bar" },
+  { id: "ar-livre", label: "Ao Ar Livre", query: "parque" },
+] as const;
+
+const badgeClasses = [
+  "bg-[#315c62] text-white",
+  "bg-[#3bd5cc] text-[#0b3f45]",
+  "bg-[#dfff00] text-[#0b3f45]",
+  "bg-[#8b35e8] text-white",
+];
+
+const routeStyles = [
+  { icon: Sun, iconBackground: "#fff0c7", labelClass: "text-[#27b9b0]" },
+  { icon: Utensils, iconBackground: "#d7f7e9", labelClass: "text-[#169c7a]" },
+  { icon: Beer, iconBackground: "#eee0ff", labelClass: "text-[#8b35e8]" },
+] as const;
+
+function formatRating(value: number | null) {
+  return value === null ? "—" : value.toFixed(1).replace(".", ",");
+}
+
+function shortAddress(address: string) {
+  const withoutCity = address.split(", Imperatriz")[0] ?? address;
+  const street = withoutCity.split(" - ").pop() ?? withoutCity;
+  return street.trim();
+}
+
+function openLabel(openNow: boolean | null) {
+  if (openNow === true) return "Aberto agora";
+  if (openNow === false) return "Fechado";
+  return "Ver horário";
+}
+
+function bestRated(places: PlaceSummary[]) {
+  return [...places].sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1))[0] ?? null;
+}
+
 export function HomePage() {
   const router = useRouter();
   const [headerSearch, setHeaderSearch] = useState("");
@@ -38,14 +81,22 @@ export function HomePage() {
     latitude: number;
     longitude: number;
   } | null>(null);
-  function handleHeaderSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    router.push(buildSearchUrl(headerSearch));
-  }
-  function handleHeroSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const [placeFilter, setPlaceFilter] =
+    useState<(typeof placeFilters)[number]["id"]>("todos");
+  const [popularPlaces, setPopularPlaces] = useState<PlaceSummary[]>([]);
+  const [popularStatus, setPopularStatus] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
+  const [popularError, setPopularError] = useState("");
+  const [highlight, setHighlight] = useState<PlaceSummary | null>(null);
+  const [showVenues, setShowVenues] = useState<PlaceSummary[]>([]);
+  const [attractions, setAttractions] = useState<PlaceSummary[]>([]);
+  function goToSearch(
+    term: string,
+    type: "lugares" | "eventos" = "lugares",
+  ) {
     const params = new URLSearchParams(
-      buildSearchUrl(heroSearch, searchType).split("?")[1],
+      buildSearchUrl(term, type).split("?")[1] ?? "",
     );
     if (region.trim() && region !== "Perto de mim") {
       params.set("regiao", region.trim());
@@ -56,6 +107,61 @@ export function HomePage() {
     }
     router.push(`/explorar?${params.toString()}`);
   }
+  function handleHeaderSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    goToSearch(headerSearch);
+  }
+  function handleHeroSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    goToSearch(heroSearch, searchType);
+  }
+  useEffect(() => {
+    const controller = new AbortController();
+    const selected =
+      placeFilters.find((filter) => filter.id === placeFilter) ?? placeFilters[0];
+    setPopularStatus("loading");
+    setPopularError("");
+
+    searchPlaces({ q: selected.query }, controller.signal)
+      .then((result) => {
+        setPopularPlaces(result.places);
+        setPopularStatus("ready");
+        if (selected.id === "todos") {
+          setHighlight(bestRated(result.places));
+        }
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setPopularPlaces([]);
+        setPopularStatus("error");
+        setPopularError(
+          error instanceof ApiError
+            ? error.message
+            : "Não foi possível buscar lugares agora.",
+        );
+      });
+
+    return () => controller.abort();
+  }, [placeFilter]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    searchPlaces({ q: "casa de show e teatro" }, controller.signal)
+      .then((result) => setShowVenues(result.places.slice(0, 3)))
+      .catch(() => {
+        if (!controller.signal.aborted) setShowVenues([]);
+      });
+
+    searchPlaces({ q: "atrações e parques" }, controller.signal)
+      .then((result) => setAttractions(result.places.slice(0, 3)))
+      .catch(() => {
+        if (!controller.signal.aborted) setAttractions([]);
+      });
+
+    return () => controller.abort();
+  }, []);
+
   function handleUseLocation() {
     if (!navigator.geolocation) {
       setLocationError("Seu navegador não oferece suporte à localização.");
@@ -451,6 +557,7 @@ export function HomePage() {
               <span className="mr-1">Mais buscados:</span>
               <button
                 type="button"
+                onClick={() => goToSearch("happy hour")}
                 className=" inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
               >
                 <Martini size={12} />
@@ -458,6 +565,7 @@ export function HomePage() {
               </button>
               <button
                 type="button"
+                onClick={() => goToSearch("lazer")}
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
               >
                 <Trees size={12} />
@@ -465,6 +573,7 @@ export function HomePage() {
               </button>
               <button
                 type="button"
+                onClick={() => goToSearch("música ao vivo")}
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
               >
                 <Music size={12} />
@@ -472,6 +581,7 @@ export function HomePage() {
               </button>
               <button
                 type="button"
+                onClick={() => goToSearch("hamburgueria")}
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/75 transition hover:bg-white/15"
               >
                 <Utensils size={12} />
@@ -533,54 +643,47 @@ export function HomePage() {
             <article
               className="
                 relative
-                min-h-[390px]
                 overflow-hidden
                 rounded-[25px]
                 bg-white
+                px-6
+                pb-6
+                pt-16
                 shadow-[0_20px_50px_rgba(0,0,0,0.12)]
-                sm:min-h-[420px]
                 lg:rotate-[1deg]
               "
             >
-              {/* ÁREA DA IMAGEM */}
-              <div className="h-[285px] w-full bg-[#f4f4f0]" />
-              {/* INFORMAÇÕES */}
-              <div className="absolute bottom-0 left-0 w-full bg-white px-6 py-5">
-                <div className="flex items-end justify-between gap-4">
-                  <div>
-                    <span
-                      className="
-                        text-[10px]
-                        font-black
-                        uppercase
-                        tracking-[0.5px]
-                        text-[#0b3f45]
-                      "
-                    >
-                      Gastronomia Regional
-                    </span>
-                    <h2
-                      className="
-                        mt-1
-                        text-[18px]
-                        font-black
-                        text-[#173f44]
-                      "
-                    >
-                      Sabor & Pôr do Sol na Orla
-                    </h2>
-                    <div className="mt-1.5 flex items-center gap-1 text-[12px] text-[#7c8788]">
-                      <MapPin size={10} fill="currentColor" />
-                      Beira-Rio, Imperatriz
+              {highlight ? (
+                <a href={highlight.mapsUrl} target="_blank" rel="noreferrer" className="block">
+                  <div className="flex items-end justify-between gap-4">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.5px] text-[#0b3f45]">
+                        {highlight.category}
+                      </span>
+                      <h2 className="mt-1 text-[18px] font-black text-[#173f44]">
+                        {highlight.name}
+                      </h2>
+                      <div className="mt-1.5 flex items-center gap-1 text-[12px] text-[#7c8788]">
+                        <MapPin size={10} fill="currentColor" />
+                        {shortAddress(highlight.address)}
+                      </div>
+                    </div>
+                    <div className="inline-flex shrink-0 items-center gap-1 text-[12px] font-black text-[#f59e0b]">
+                      <Star size={14} fill="currentColor" strokeWidth="1.8" />
+                      <span>{formatRating(highlight.rating)}</span>
+                      {highlight.reviewCount !== null ? (
+                        <span className="text-[12px] font-bold">({highlight.reviewCount})</span>
+                      ) : null}
                     </div>
                   </div>
-                  <div className="inline-flex items-center gap-1 shrink-0 text-[12px] font-black text-[#f59e0b]">
-                    <Star size={14} fill="currentColor" strokeWidth="1.8" />
-                    <span>4.9</span>
-                    <span className="text-[12px] font-bold">(128)</span>
-                  </div>
-                </div>
-              </div>
+                </a>
+              ) : (
+                <p className="text-[14px] font-semibold text-[#607174]">
+                  {popularStatus === "error"
+                    ? popularError
+                    : "Buscando um destaque em Imperatriz…"}
+                </p>
+              )}
             </article>
           </div>
         </div>
@@ -601,6 +704,7 @@ export function HomePage() {
               </h2>
               <button
                 type="button"
+                onClick={() => goToSearch("restaurantes e bares")}
                 className="
             text-[12px]
             font-bold
@@ -628,38 +732,44 @@ export function HomePage() {
               <CategoryCard
                 icon={Utensils}
                 title="Restaurantes"
-                subtitle="84 locais"
+                subtitle="Buscar no mapa"
                 iconBackground="#fff0c7"
+                onClick={() => goToSearch("restaurante")}
               />
               <CategoryCard
                 icon={Martini}
                 title="Bares & Pubs"
-                subtitle="42 locais"
+                subtitle="Buscar no mapa"
                 iconBackground="#caf5f6"
+                onClick={() => goToSearch("bar")}
               />
               <CategoryCard
                 icon={Trees}
                 title="Lazer"
-                subtitle="29 locais"
+                subtitle="Buscar no mapa"
                 iconBackground="#d7f7e9"
+                onClick={() => goToSearch("lazer ao ar livre")}
               />
               <CategoryCard
                 icon={Music}
                 title="Shows & Eventos"
-                subtitle="18 esta semana"
+                subtitle="Buscar no mapa"
                 iconBackground="#eee0ff"
+                onClick={() => goToSearch("casa de show")}
               />
               <CategoryCard
                 icon={ShoppingBag}
                 title="Compras & Feiras"
-                subtitle="36 locais"
+                subtitle="Buscar no mapa"
                 iconBackground="#ffe0e5"
+                onClick={() => goToSearch("compras")}
               />
               <CategoryCard
                 icon={Sparkles}
                 title="Experiências"
-                subtitle="15 roteiros"
+                subtitle="Buscar no mapa"
                 iconBackground="#e8f6c9"
+                onClick={() => goToSearch("atrações turísticas")}
               />
             </div>
           </div>
@@ -717,69 +827,23 @@ export function HomePage() {
             shadow-[0_1px_4px_rgba(20,50,55,0.05)]
           "
               >
-                <button
-                  type="button"
-                  className="
-              shrink-0
-              rounded-full
-              bg-[#0b3f45]
-              px-5
-              py-2
-              text-[12px]
-              font-bold
-              text-[#dfff00]
-            "
-                >
-                  Todos
-                </button>
-                <button
-                  type="button"
-                  className="
-              shrink-0
-              rounded-full
-              px-5
-              py-2
-              text-[12px]
-              font-semibold
-              text-[#697879]
-              transition
-              hover:text-[#0b3f45]
-            "
-                >
-                  Gastronomia
-                </button>
-                <button
-                  type="button"
-                  className="
-              shrink-0
-              rounded-full
-              px-5
-              py-2
-              text-[12px]
-              font-semibold
-              text-[#697879]
-              transition
-              hover:text-[#0b3f45]
-            "
-                >
-                  Vida Noturna
-                </button>
-                <button
-                  type="button"
-                  className="
-              shrink-0
-              rounded-full
-              px-5
-              py-2
-              text-[12px]
-              font-semibold
-              text-[#697879]
-              transition
-              hover:text-[#0b3f45]
-            "
-                >
-                  Ao Ar Livre
-                </button>
+                {placeFilters.map((filter) => {
+                  const selected = placeFilter === filter.id;
+                  return (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => setPlaceFilter(filter.id)}
+                      className={`shrink-0 rounded-full px-5 py-2 text-[12px] transition ${
+                        selected
+                          ? "bg-[#0b3f45] font-bold text-[#dfff00]"
+                          : "font-semibold text-[#697879] hover:text-[#0b3f45]"
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             {/* CARDS */}
@@ -793,51 +857,32 @@ export function HomePage() {
           xl:grid-cols-4
         "
             >
-              <PlaceCard
-                badge="GOURMET"
-                badgeClass="bg-[#315c62] text-white"
-                rating="4.8"
-                reviews="96"
-                title="Varanda do Tocantins"
-                location="Avenida Beira-Rio, Centro"
-                description="Cozinha regional sofisticada com vista panorâmica do pôr do sol no Rio Tocantins."
-                price="$$$ • Regional"
-                status="Aberto agora"
-              />
-              <PlaceCard
-                badge="COCKTAIL BAR"
-                badgeClass="bg-[#3bd5cc] text-[#0b3f45]"
-                rating="4.9"
-                reviews="142"
-                title="Bora Vê Bar & Lounge"
-                location="Bairro Juçara"
-                description="Drinks autorais com frutas tropicais da região, chopp trincando e música ao vivo."
-                price="$$ • Pub & Drinks"
-                status="Abre às 18h"
-              />
-              <PlaceCard
-                badge="LAZER GRÁTIS"
-                badgeClass="bg-[#dfff00] text-[#0b3f45]"
-                rating="5.0"
-                reviews="310"
-                title="Orla Beira-Rio"
-                location="Centro, Imperatriz"
-                description="Espaço ao ar livre perfeito para caminhadas, água de coco e apreciar o pôr do sol."
-                price="Gratuito"
-                status="24h"
-              />
-              <PlaceCard
-                badge="CULTURA & ARTE"
-                badgeClass="bg-[#8b35e8] text-white"
-                rating="4.7"
-                reviews="54"
-                title="Centro Cultural Ferreira Gullar"
-                location="Praça de Fátima"
-                description="Exposições de artistas locais, oficinas culturais e apresentações teatrais semanais."
-                price="Grátis / Variado"
-                status="Especial"
-                special
-              />
+              {popularStatus === "loading" ? (
+                <p className="col-span-full py-10 text-center text-[14px] font-semibold text-[#607174]">
+                  Buscando lugares em Imperatriz…
+                </p>
+              ) : popularStatus === "error" ? (
+                <p className="col-span-full py-10 text-center text-[14px] font-semibold text-[#607174]">
+                  {popularError}
+                </p>
+              ) : (
+                popularPlaces.slice(0, 4).map((place, index) => (
+                  <PlaceCard
+                    key={place.id}
+                    badge={place.category}
+                    badgeClass={badgeClasses[index % badgeClasses.length]}
+                    rating={formatRating(place.rating)}
+                    reviews={place.reviewCount === null ? "0" : String(place.reviewCount)}
+                    title={place.name}
+                    location={shortAddress(place.address)}
+                    description={place.address}
+                    price={place.price || "Preço no mapa"}
+                    status={openLabel(place.openNow)}
+                    special={place.openNow === false}
+                    href={place.mapsUrl}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -867,7 +912,7 @@ export function HomePage() {
             text-[#0b3f45]
           "
               >
-                Agenda da Semana
+                Onde sair
               </span>
               <h2
                 className="
@@ -880,15 +925,16 @@ export function HomePage() {
             md:text-[32px]
           "
               >
-                Eventos & Shows em Imperatriz
+                Shows e teatros em Imperatriz
               </h2>
               <p className="mt-2 text-[14px] text-white/55">
-                Fique por dentro das festas, feiras, festivais e apresentações
-                que vão rolar nos próximos dias.
+                Casas de show e teatros encontrados no Google Maps. A agenda
+                com data e horário ainda não vem dessa busca.
               </p>
             </div>
             <button
               type="button"
+              onClick={() => goToSearch("casa de show")}
               className="
           flex
           w-fit
@@ -912,39 +958,40 @@ export function HomePage() {
           </div>
           {/* CARDS */}
           <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <EventCard
-              day="08"
-              category="FESTIVAL DE MPB"
-              categoryClass="bg-[#1b5b5b] text-[#42d8cf]"
-              dateClass="bg-[#dfff00] text-[#0b3f45]"
-              title="Sons do Tocantins – Festival Aberto"
-              schedule="Sábado às 19:00"
-              location="Concha Acústica da Beira-Rio"
-              price="Entrada Gratuita"
-              priceClass="text-[#dfff00]"
-            />
-            <EventCard
-              day="12"
-              category="GASTRONOMIA"
-              categoryClass="bg-[#31533d] text-[#dfff00]"
-              dateClass="bg-[#39d5cb] text-[#0b3f45]"
-              title="Feira Gastronômica & Cervejeira"
-              schedule="Quinta a Domingo das 17h às 23h"
-              location="Praça de Fátima"
-              price="Acesso Livre"
-              priceClass="text-white/70"
-            />
-            <EventCard
-              day="15"
-              category="STAND-UP COMEDY"
-              categoryClass="bg-[#403750] text-[#d9a4ff]"
-              dateClass="bg-[#bd6df2] text-[#0b3f45]"
-              title="Noite do Riso com Artistas Regionais"
-              schedule="Domingo às 20:00"
-              location="Teatro Ferreira Gullar"
-              price="Ingressos a partir de R$ 25"
-              priceClass="text-[#dfff00]"
-            />
+            {showVenues.length === 0 ? (
+              <p className="col-span-full text-[14px] text-white/60">
+                Buscando casas de show e teatros…
+              </p>
+            ) : (
+              showVenues.map((place) => (
+                <a
+                  key={place.id}
+                  href={place.mapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex min-h-[180px] flex-col rounded-[25px] border border-white/10 bg-[#062f33] px-6 py-6 transition duration-200 hover:-translate-y-1 hover:bg-[#07383d]"
+                >
+                  <span className="w-fit rounded-full bg-[#1b5b5b] px-3 py-1.5 text-[10px] font-bold uppercase text-[#42d8cf]">
+                    {place.category}
+                  </span>
+                  <h3 className="mt-5 text-[16px] font-black leading-[1.2] text-white">
+                    {place.name}
+                  </h3>
+                  <div className="mt-3 flex items-center gap-2 text-[12px] text-white/65">
+                    <MapPin size={12} className="shrink-0 text-[#35d6cc]" />
+                    <span>{shortAddress(place.address)}</span>
+                  </div>
+                  <div className="mt-auto flex items-center justify-between gap-4 border-t border-white/10 pt-4">
+                    <span className="text-[12px] font-semibold text-[#dfff00]">
+                      {formatRating(place.rating)} no Google
+                    </span>
+                    <span className="text-[12px] font-semibold text-white">
+                      Ver no mapa
+                    </span>
+                  </div>
+                </a>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -994,41 +1041,34 @@ export function HomePage() {
               </h2>
             </div>
             <p className="text-[12px] text-[#879292]">
-              Sugestões de passeios prontas para você aproveitar
+              Lugares reais para começar o passeio
             </p>
           </div>
           {/* CARDS */}
           <div className="mt-9 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <RouteCard
-              icon={Sun}
-              iconBackground="#fff0c7"
-              label="ROTEIRO TARDE & NOITE"
-              labelClass="text-[#27b9b0]"
-              title="O Pôr do Sol Perfeito no Rio Tocantins"
-              description="Um itinerário completo desde a caminhada na Beira-Rio, peixe frito com macaxeira até o chopp gelado ao anoitecer."
-              infoLeft="4 paradas"
-              infoRight="~3 horas"
-            />
-            <RouteCard
-              icon={Utensils}
-              iconBackground="#d7f7e9"
-              label="GUIA GASTRONÔMICO"
-              labelClass="text-[#169c7a]"
-              title="Rota dos Sabores Regionais"
-              description="Conheça os pratos icônicos da culinária maranhense e do cerrado em estabelecimentos tradicionais do Centro."
-              infoLeft="5 locais"
-              infoRight="$$ Variado"
-            />
-            <RouteCard
-              icon={Beer}
-              iconBackground="#eee0ff"
-              label="SEXTOU NA CIDADE"
-              labelClass="text-[#8b35e8]"
-              title="Circuito do Chopp & Música ao Vivo"
-              description="Os melhores bares e pubs para quem busca ambiente animado, porções generosas e som de qualidade no fim de semana."
-              infoLeft="3 pubs"
-              infoRight="A partir das 19h"
-            />
+            {attractions.length === 0 ? (
+              <p className="col-span-full text-[14px] font-semibold text-[#607174]">
+                Buscando atrações em Imperatriz…
+              </p>
+            ) : (
+              attractions.map((place, index) => {
+                const style = routeStyles[index % routeStyles.length];
+                return (
+                  <RouteCard
+                    key={place.id}
+                    icon={style.icon}
+                    iconBackground={style.iconBackground}
+                    label={place.category}
+                    labelClass={style.labelClass}
+                    title={place.name}
+                    description={place.address}
+                    infoLeft={formatRating(place.rating)}
+                    infoRight={openLabel(place.openNow)}
+                    href={place.mapsUrl}
+                  />
+                );
+              })
+            )}
           </div>
         </div>
       </section>
@@ -1320,16 +1360,19 @@ type CategoryCardProps = {
   title: string;
   subtitle: string;
   iconBackground: string;
+  onClick?: () => void;
 };
 function CategoryCard({
   icon: Icon,
   title,
   subtitle,
   iconBackground,
+  onClick,
 }: CategoryCardProps) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="
         group
         flex
@@ -1394,6 +1437,7 @@ type PlaceCardProps = {
   price: string;
   status: string;
   special?: boolean;
+  href?: string;
 };
 function PlaceCard({
   badge,
@@ -1406,16 +1450,20 @@ function PlaceCard({
   price,
   status,
   special = false,
+  href,
 }: PlaceCardProps) {
   return (
     <article
       className="
         group
-        overflow-hidden
+        flex
+        flex-col
         rounded-[24px]
         border
         border-[#e3e7e4]
         bg-white
+        px-5
+        py-5
         shadow-[0_8px_22px_rgba(20,50,55,0.07)]
         transition
         duration-200
@@ -1423,14 +1471,9 @@ function PlaceCard({
         hover:shadow-[0_14px_30px_rgba(20,50,55,0.11)]
       "
     >
-      {/* IMAGEM */}
-      <div className="relative h-[190px] bg-[#f0f1f2]">
-        {/* BADGE */}
+      <div className="flex items-start justify-between gap-3">
         <span
           className={`
-            absolute
-            left-3
-            top-3
             rounded-full
             px-3
             py-1.5
@@ -1441,55 +1484,31 @@ function PlaceCard({
         >
           {badge}
         </span>
-        {/* FAVORITO */}
         <button
           type="button"
           aria-label={`Favoritar ${title}`}
           className="
-            absolute
-            right-3
-            top-3
             flex
             h-[34px]
             w-[34px]
+            shrink-0
             items-center
             justify-center
             rounded-full
-            bg-white
+            border
+            border-[#e3e7e4]
             text-[#93a0a0]
-            shadow-[0_3px_10px_rgba(20,50,55,0.12)]
             transition
             hover:text-[#27b9b0]
           "
         >
           <Heart size={16} />
         </button>
-        {/* NOTA */}
-        <div
-          className="
-            absolute
-            bottom-3
-            left-3
-            flex
-            items-center
-            gap-1
-            rounded-full
-            bg-white
-            px-2.5
-            py-1
-            text-[12px]
-            shadow-sm
-          "
-        >
-          <Star size={12} fill="currentColor" className="text-[#f5a000]" />
-          <span className="font-black text-[#f5a000]">{rating}</span>
-          <span className="text-[#a0aaaa]">({reviews})</span>
-        </div>
       </div>
-      {/* CONTEÚDO */}
-      <div className="flex min-h-[205px] flex-col px-5 py-5">
+      <div className="mt-4 flex items-start justify-between gap-3">
         <h3
           className="
+            min-w-0
             text-[16px]
             font-black
             leading-[1.15]
@@ -1498,6 +1517,13 @@ function PlaceCard({
         >
           {title}
         </h3>
+        <div className="inline-flex shrink-0 items-center gap-1 text-[12px] font-black text-[#f5a000]">
+          <Star size={12} fill="currentColor" />
+          <span>{rating}</span>
+          <span className="font-bold text-[#a0aaaa]">({reviews})</span>
+        </div>
+      </div>
+      <div className="mt-4 flex min-h-[140px] flex-col">
         <div
           className="
             mt-2
@@ -1559,6 +1585,16 @@ function PlaceCard({
             {status}
           </span>
         </div>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 text-[12px] font-bold text-[#0b3f45] underline underline-offset-2"
+          >
+            Ver no mapa
+          </a>
+        ) : null}
       </div>
     </article>
   );
@@ -1704,6 +1740,7 @@ type RouteCardProps = {
   description: string;
   infoLeft: string;
   infoRight: string;
+  href?: string;
 };
 function RouteCard({
   icon: Icon,
@@ -1714,6 +1751,7 @@ function RouteCard({
   description,
   infoLeft,
   infoRight,
+  href,
 }: RouteCardProps) {
   return (
     <article
@@ -1807,6 +1845,16 @@ function RouteCard({
           <Clock size={12} />
           {infoRight}
         </span>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[#0b3f45] underline underline-offset-2"
+          >
+            Ver no mapa
+          </a>
+        ) : null}
       </div>
     </article>
   );
