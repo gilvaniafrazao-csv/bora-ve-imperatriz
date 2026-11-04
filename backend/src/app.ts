@@ -7,6 +7,7 @@ import { authRouter } from './modules/auth/auth.routes';
 import { healthRouter } from './modules/health/health.routes';
 import { preferencesRouter } from './modules/preferences/preferences.routes';
 import { recommendationsRouter } from './modules/recommendations/recommendations.routes';
+import { establishmentsRouter } from './modules/establishments/establishments.routes';
 import { errorHandler, notFoundHandler } from './shared/http/errorHandler';
 
 function isAllowedOrigin(origin: string | undefined): boolean {
@@ -45,6 +46,7 @@ export function createApp(): Application {
   app.use('/api/auth', authRouter);
   app.use('/api/preferences', preferencesRouter);
   app.use('/api/recommendations', recommendationsRouter);
+  app.use('/api/establishments', establishmentsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
