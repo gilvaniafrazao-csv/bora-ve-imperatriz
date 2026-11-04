@@ -184,3 +184,29 @@ Campos inválidos retornam `400 VALIDATION_ERROR` com `error.details`.
 ### `GET /api/preferences` — consultar
 
 Resposta `200` com `{ "preferences": { ... } }` no mesmo formato acima. Usuário que ainda não escolheu nada recebe `categorySlugs: []`, `priceRange: null` e `onboardingCompleted: false` (não é erro). `categorySlugs` vem ordenado por slug para a resposta ser estável; é essa lista que o motor de recomendação deve consumir.
+
+
+## Busca de lugares e filtros (`/api/places/search`)
+
+`GET /api/places/search` — rota **pública**. Busca lugares reais de Imperatriz no **Google Places (New)**; exige `GOOGLE_MAPS_API_KEY` no backend (sem ela responde `503 PLACES_NOT_CONFIGURED`). Todos os parâmetros são opcionais e os filtros se combinam (E):
+
+| Parâmetro | Exemplo | O que faz |
+| --- | --- | --- |
+| `q` | `q=pizza` | O que a pessoa procura (até 80 caracteres). Vazio = descoberta da cidade |
+| `bairro` (ou `regiao`) | `bairro=Juçara` | Centraliza a busca no bairro |
+| `lat`, `lon` | `lat=-5.52&lon=-47.49` | Posição da pessoa ("Perto de mim"); juntas |
+| `categoria` | `categoria=Bares` | `Restaurantes`, `Cafeterias`, `Bares`, `Vida Noturna`, `Cultura`, `Compras`, `Ao ar livre` ou `Esportes` (ignora caixa e acento; `Todos` não filtra) |
+| `preco` | `preco=$,$$` | `$`, `$$` e/ou `$$$` (qualquer uma). Lugar sem faixa de preço não aparece quando há filtro de preço |
+| `raioKm` | `raioKm=3` | Distância máxima (0,5 a 40 km) a partir de você, do bairro ou do centro da cidade. Lugar sem localização fica de fora |
+| `aberto` | `aberto=true` | Só quem está aberto agora (sem horário informado não conta) |
+| `ordenar` | `ordenar=nota` | `relevancia` (padrão, ordem do Google), `nota` (maior primeiro) ou `distancia` (mais perto primeiro) |
+
+Resposta `200`: `{ query, area, filters, total, places }`. `filters` mostra o que valeu (já normalizado) e `total` é a quantidade depois dos filtros; cada lugar traz `category`, `categories`, `rating`, `reviewCount`, `price`, `openNow`, `distanceKm`, `mapsUrl` etc. Filtro inválido: `400 VALIDATION_ERROR` com `error.details`.
+
+**Como os filtros são aplicados** (duas camadas):
+1. **No pedido ao Google**, quando ele suporta: `openNow`, `priceLevels` e `pageSize: 20` (12 sem filtros), para o Google já devolver lugares que casam. Só `categoria` sem texto troca o assunto da busca (ex.: `bares e pubs`).
+2. **No servidor**, sempre (`applyPlaceFilters`): categoria, preço, aberto e raio são conferidos de novo e a ordenação é aplicada. É a camada confiável, que vale mesmo se o Google ignorar algum filtro.
+
+Se o Google recusar um pedido que levava `openNow`/`priceLevels`, o servidor tenta **uma vez** sem eles e filtra por conta própria. Sem filtros, não há nova tentativa.
+
+> Os testes (`tests/places.filters.test.ts`) simulam o Google; nada neste fluxo foi testado contra a API real do Google.
