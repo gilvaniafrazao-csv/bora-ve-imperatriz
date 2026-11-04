@@ -114,10 +114,20 @@ async function placesFetch(url: string, init: RequestInit, fieldMask: string): P
   return response;
 }
 
+/** Filtros que o Text Search do Google sabe aplicar sozinho (o servidor confere tudo de novo depois). */
+export type TextSearchOptions = {
+  openNow?: boolean;
+  /** Valores de `priceLevel` aceitos em pedido (PRICE_LEVEL_FREE só existe na resposta). */
+  priceLevels?: string[];
+  /** 1 a 20; o padrão da busca sem filtros é 12. */
+  pageSize?: number;
+};
+
 export async function searchPlacesText(
   textQuery: string,
   center: LatLng,
   radiusMeters: number,
+  options: TextSearchOptions = {},
 ): Promise<GooglePlace[]> {
   const response = await placesFetch(
     TEXT_SEARCH_URL,
@@ -127,7 +137,11 @@ export async function searchPlacesText(
         textQuery,
         languageCode: 'pt-BR',
         regionCode: 'BR',
-        pageSize: 12,
+        pageSize: options.pageSize ?? 12,
+        ...(options.openNow ? { openNow: true } : {}),
+        ...(options.priceLevels && options.priceLevels.length > 0
+          ? { priceLevels: options.priceLevels }
+          : {}),
         locationBias: {
           circle: {
             center,

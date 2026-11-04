@@ -1,5 +1,15 @@
 # Registro de Decisões
 
+## 04/11/2026 — Filtros da busca de lugares (categoria, preço, distância, aberto agora)
+
+O Explorar tinha toda a interface de filtros, mas aplicava tudo sobre uma lista fixa no código. Agora ele busca lugares reais em `GET /api/places/search`, que ganhou `categoria`, `preco`, `raioKm`, `aberto` e `ordenar` (detalhes em `backend/README.md`).
+
+- **Duas camadas.** `openNow`, `priceLevels` e `pageSize: 20` vão no pedido ao Google (ele já devolve só o que casa, em vez de 12 resultados que depois sobrariam poucos); categoria, preço, aberto e raio são **conferidos de novo no servidor**, que é a camada confiável e testável sem a chave do Google.
+- **Recuo seguro.** Se o Google recusar o pedido com filtros, tenta uma vez sem eles e filtra no servidor. Sem isso, um nome de campo errado derrubaria toda busca filtrada (não há como testar contra a API real daqui).
+- **Só categoria, sem texto:** o assunto da busca vira o tipo do grupo (ex.: `museus, teatros e cinemas`); com texto, o texto manda e a categoria filtra o resultado.
+- **Lugar sem a informação filtrada não passa** (sem faixa de preço, sem horário, sem localização), em vez de aparecer "por engano". O Google faz o mesmo com `priceLevels`.
+- **Limitação do Google:** `PRICE_LEVEL_FREE` não pode ser pedido, então "$" pede só `INEXPENSIVE`. A busca devolve no máximo 20 lugares por pedido.
+- **Frontend:** o controle de distância em 20 km (o máximo) significa "sem limite" e não envia `raioKm`. Os cartões usam "Ver no mapa" (`mapsUrl`), como a Home, porque a tela de detalhes ainda usa dados fixos e não conhece IDs do Google.
 ## 07/10/2026 — Busca de e-mail exata e erros de corpo da requisição
 
 - **E-mail:** cadastro e login passam a buscar por igualdade exata (`.eq`) em vez de `ILIKE`. No `ILIKE`, `_` e `%` são curingas: `joao_silva@x.com` casava com `joaoXsilva@x.com`, gerando falso "e-mail já cadastrado" (409) no cadastro e erro (503) no login quando dois e-mails casavam entre si. A API sempre normaliza o e-mail para minúsculas antes de gravar e de buscar, então a comparação exata basta. Consequência: e-mails inseridos **com maiúsculas direto no banco** (fora da API) deixam de ser encontrados; devem ser gravados em minúsculas.
