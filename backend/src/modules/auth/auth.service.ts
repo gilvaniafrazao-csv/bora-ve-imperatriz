@@ -1,17 +1,28 @@
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import { env } from '../../config/env';
 import { AppError } from '../../shared/errors/AppError';
 import {
+  insertPasswordResetToken,
+  invalidateResetToken,
+  invalidateUserResetTokens,
   deleteUserById,
   findAuthUserByEmail,
   findCategoryIdsBySlugs,
+  findLatestResetTokenCreatedAt,
   findUserIdByEmail,
   insertUser,
   insertUserPreferences,
+  resetPasswordWithToken,
 } from './auth.repository';
 import { PublicUser } from './auth.types';
-import { parseLoginBody, parseRegisterBody } from './auth.validation';
+import {
+  parseForgotPasswordBody,
+  parseLoginBody,
+  parseRegisterBody,
+  parseResetPasswordBody,
+} from './auth.validation';
+import { sendPasswordResetEmail } from '../../shared/mail/mailer';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -98,4 +109,79 @@ export async function loginUser(body: unknown): Promise<{ user: PublicUser; toke
     },
     token: signAccessToken(row.id),
   };
+}
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const RESET_REQUEST_COOLDOWN_MS = 60 * 1000;
+
+function hashResetToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+/**
+ * Gera um token de uso único (validade de 1 hora), guarda só o hash no banco
+ * e envia o link por e-mail. A resposta é sempre a mesma, exista a conta ou
+ * não, para não revelar quais e-mails estão cadastrados.
+ */
+export async function requestPasswordRecovery(body: unknown): Promise<void> {
+  const { email } = parseForgotPasswordBody(body);
+
+  const user = await findAuthUserByEmail(email);
+  if (!user) {
+    return;
+  }
+
+  const lastRequestAt = await findLatestResetTokenCreatedAt(user.id);
+  if (lastRequestAt && Date.now() - lastRequestAt.getTime() < RESET_REQUEST_COOLDOWN_MS) {
+    // Pedido recente: nao envia outro e-mail. A resposta continua a mesma.
+    return;
+  }
+
+  const token = randomBytes(32).toString('base64url');
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+
+  const tokenHash = hashResetToken(token);
+
+  await invalidateUserResetTokens(user.id);
+  await insertPasswordResetToken(user.id, tokenHash, expiresAt);
+
+  const link = `${env.frontendUrl}/redefinir-senha?token=${token}`;
+
+  try {
+    await sendPasswordResetEmail(user.email, user.name, link);
+  } catch (error) {
+    // Nunca logar o token nem o link. A resposta ao cliente continua a mesma.
+    console.error('[auth.service] falha ao enviar e-mail de recuperação', {
+      userId: user.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    // Ninguém recebeu o link: invalida o token para não deixá-lo válido à toa.
+    try {
+      await invalidateResetToken(tokenHash);
+    } catch {
+      console.error('[auth.service] falha ao invalidar token após erro de envio', {
+        userId: user.id,
+      });
+    }
+  }
+}
+
+/**
+ * Redefine a senha a partir do token do e-mail. O hash da nova senha é
+ * calculado antes de tocar no banco; consumir o token e gravar a senha
+ * acontecem juntos numa transação, então uma falha não queima o link.
+ */
+export async function resetUserPassword(body: unknown): Promise<void> {
+  const { token, newPassword } = parseResetPasswordBody(body);
+
+  const newPasswordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  const userId = await resetPasswordWithToken(hashResetToken(token), newPasswordHash);
+  if (!userId) {
+    throw new AppError(
+      'Link inválido ou expirado. Peça uma nova recuperação de senha.',
+      400,
+      'INVALID_RESET_TOKEN',
+    );
+  }
 }

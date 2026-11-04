@@ -43,3 +43,30 @@ export function loginUser(payload: LoginPayload) {
 export function saveAuthToken(token: string) {
   window.localStorage.setItem(AUTH_TOKEN_KEY, token);
 }
+
+export type ForgotPasswordResponse = {
+  message: string;
+};
+
+export function requestPasswordReset(email: string) {
+  return apiRequest<ForgotPasswordResponse>("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export type ResetPasswordPayload = {
+  token: string;
+  newPassword: string;
+};
+
+export type ResetPasswordResponse = {
+  message: string;
+};
+
+export function resetPassword(payload: ResetPasswordPayload) {
+  return apiRequest<ResetPasswordResponse>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
