@@ -1,21 +1,33 @@
-import nodemailer from 'nodemailer';
-import { getMailConfig } from '../../config/env';
+import nodemailer, { Transporter } from 'nodemailer';
+import { getMailConfig, MailConfig } from '../../config/env';
 
 /*
- * A configuracao vem de getMailConfig(): em desenvolvimento usa o Mailpit
- * local (sem TLS); em producao exige TLS, credenciais e remetente por
- * variaveis de ambiente. Se faltar alguma em producao, o servidor nem sobe.
+ * A configuracao de e-mail so e lida na primeira vez que um e-mail e enviado,
+ * e nao quando o backend inicia. Assim, a falta de SMTP em producao nao
+ * derruba a API inteira (login, cadastro etc.): so o envio falha, e o erro
+ * e registrado em log por quem chamou. Quando a configuracao existe, o
+ * comportamento e o mesmo de antes: em desenvolvimento usa o Mailpit local
+ * sem TLS; em producao exige TLS, credenciais e remetente.
  */
-const mailConfig = getMailConfig();
+let mailer: { config: MailConfig; transporter: Transporter } | null = null;
 
-const transporter = nodemailer.createTransport({
-  host: mailConfig.host,
-  port: mailConfig.port,
-  secure: mailConfig.secure,
-  requireTLS: mailConfig.requireTLS,
-  ignoreTLS: mailConfig.ignoreTLS,
-  auth: mailConfig.auth,
-});
+function getMailer(): { config: MailConfig; transporter: Transporter } {
+  if (!mailer) {
+    const config = getMailConfig();
+    mailer = {
+      config,
+      transporter: nodemailer.createTransport({
+        host: config.host,
+        port: config.port,
+        secure: config.secure,
+        requireTLS: config.requireTLS,
+        ignoreTLS: config.ignoreTLS,
+        auth: config.auth,
+      }),
+    };
+  }
+  return mailer;
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -30,8 +42,10 @@ export async function sendPasswordResetEmail(
   name: string,
   link: string,
 ): Promise<void> {
+  const { config, transporter } = getMailer();
+
   await transporter.sendMail({
-    from: mailConfig.from,
+    from: config.from,
     to,
     subject: 'Recuperação de senha - Bora Vê',
     text:
