@@ -13,6 +13,13 @@ import {
 import { FormEvent, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ApiError } from "@/lib/api";
+import {
+  searchPlaces,
+  type PlaceSearchResponse,
+  type PlaceSort,
+  type PlaceSummary,
+} from "@/lib/places";
 import { buildSearchUrl } from "@/lib/search-routing";
 
 const categories = [
@@ -36,52 +43,25 @@ const eventCategories = [
   "Festas",
 ];
 
-const places = [
-  {
-    id: 1,
-    name: "Pizzaria Nostra",
-    category: "Restaurantes",
-    description: "Pizzas artesanais e ambiente aconchegante.",
-    rating: 4.8,
-    distance: "1,2 km",
-    distanceKm: 1.2,
-    price: "$$",
-    open: true,
-  },
-  {
-    id: 2,
-    name: "Café da Praça",
-    category: "Cafeterias",
-    description: "Cafés especiais, doces e opções para o fim da tarde.",
-    rating: 4.7,
-    distance: "2,1 km",
-    distanceKm: 2.1,
-    price: "$$",
-    open: true,
-  },
-  {
-    id: 3,
-    name: "Varanda 51",
-    category: "Bares",
-    description: "Drinks, música e gastronomia para aproveitar a noite.",
-    rating: 4.6,
-    distance: "3,4 km",
-    distanceKm: 3.4,
-    price: "$$$",
-    open: false,
-  },
-  {
-    id: 4,
-    name: "Espaço Cultural",
-    category: "Cultura",
-    description: "Arte, cultura e programação para diferentes públicos.",
-    rating: 4.5,
-    distance: "4,3 km",
-    distanceKm: 4.3,
-    price: "$",
-    open: true,
-  },
-];
+/** Valor máximo do controle de distância: nesse ponto o filtro fica desligado. */
+const MAX_DISTANCE_KM = 20;
+
+/** Tempo de espera depois da última mudança de filtro antes de buscar de novo. */
+const SEARCH_DEBOUNCE_MS = 350;
+
+const sortOptions: Record<string, PlaceSort> = {
+  relevant: "relevancia",
+  rating: "nota",
+  distance: "distancia",
+};
+
+function formatDistance(distanceKm: number | null) {
+  if (distanceKm === null) return null;
+  return `${distanceKm.toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })} km`;
+}
 
 const events = [
   {
@@ -166,6 +146,87 @@ export function ExplorePage() {
   const [eventPeriod, setEventPeriod] = useState("todos");
   const [eventPrice, setEventPrice] = useState("todos");
 
+  // Lugares reais (API) com os filtros aplicados no servidor.
+  // A Home leva `regiao` (bairro) ou `lat`/`lon` ("Perto de mim") na URL.
+  const urlRegion = searchParams.get("regiao") ?? "";
+  const urlLat = searchParams.get("lat");
+  const urlLon = searchParams.get("lon");
+  const [places, setPlaces] = useState<PlaceSummary[]>([]);
+  const [area, setArea] = useState<PlaceSearchResponse["area"] | null>(null);
+  const [placesStatus, setPlacesStatus] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
+  const [placesError, setPlacesError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    if (contentType !== "lugares") return;
+
+    const controller = new AbortController();
+    setPlacesStatus("loading");
+    setPlacesError("");
+
+    // Espera um instante: o controle de distância dispara várias mudanças seguidas.
+    const timer = window.setTimeout(() => {
+      searchPlaces(
+        {
+          q: submittedSearch,
+          bairro: urlRegion,
+          lat: urlLat,
+          lon: urlLon,
+          categoria: selectedCategory,
+          preco: selectedPrice,
+          raioKm: maxDistance < MAX_DISTANCE_KM ? maxDistance : undefined,
+          aberto: openNow,
+          ordenar: sortOptions[sortBy],
+        },
+        controller.signal,
+      )
+        .then((result) => {
+          setPlaces(result.places);
+          setArea(result.area);
+          setPlacesStatus("ready");
+        })
+        .catch((error: unknown) => {
+          if (controller.signal.aborted) return;
+          setPlaces([]);
+          setPlacesStatus("error");
+          setPlacesError(
+            error instanceof ApiError
+              ? error.message
+              : "Não foi possível buscar lugares agora.",
+          );
+        });
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [
+    contentType,
+    submittedSearch,
+    urlRegion,
+    urlLat,
+    urlLon,
+    selectedCategory,
+    selectedPrice,
+    maxDistance,
+    openNow,
+    sortBy,
+    reloadKey,
+  ]);
+
+  function clearAllFilters() {
+    setSearch("");
+    setSubmittedSearch("");
+    setSelectedCategory("Todos");
+    setSelectedPrice("");
+    setMaxDistance(MAX_DISTANCE_KM);
+    setOpenNow(false);
+    setSortBy("relevant");
+  }
+
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -175,33 +236,6 @@ export function ExplorePage() {
     setSubmittedSearch(term);
     router.push(destination);
   }
-
-  const filteredPlaces = places.filter((place) => {
-    const matchesCategory =
-      selectedCategory === "Todos" || place.category === selectedCategory;
-
-    const term = submittedSearch.toLowerCase();
-
-    const matchesSearch =
-      !term ||
-      place.name.toLowerCase().includes(term) ||
-      place.category.toLowerCase().includes(term) ||
-      place.description.toLowerCase().includes(term);
-
-    const matchesPrice = !selectedPrice || place.price === selectedPrice;
-
-    const matchesDistance = place.distanceKm <= maxDistance;
-
-    const matchesOpen = !openNow || place.open;
-
-    return (
-      matchesCategory &&
-      matchesSearch &&
-      matchesPrice &&
-      matchesDistance &&
-      matchesOpen
-    );
-  });
 
   const filteredEvents = events.filter((event) => {
     const matchesCategory =
@@ -223,18 +257,6 @@ export function ExplorePage() {
       eventPrice === "todos" || event.priceType === eventPrice;
 
     return matchesCategory && matchesSearch && matchesPeriod && matchesPrice;
-  });
-
-  const sortedPlaces = [...filteredPlaces].sort((a, b) => {
-    if (sortBy === "rating") {
-      return b.rating - a.rating;
-    }
-
-    if (sortBy === "distance") {
-      return a.distanceKm - b.distanceKm;
-    }
-
-    return 0;
   });
 
   return (
@@ -501,14 +523,18 @@ export function ExplorePage() {
                   : "Recomendados para descobrir"}
             </h2>
 
-            <p className="mt-1 text-sm text-teal-50">
+            <p className="mt-1 text-sm text-teal-50" aria-live="polite">
               {contentType === "eventos"
                 ? `${filteredEvents.length} ${
                     filteredEvents.length === 1 ? "evento" : "eventos"
                   }`
-                : `${filteredPlaces.length} ${
-                    filteredPlaces.length === 1 ? "lugar" : "lugares"
-                  }`}
+                : placesStatus === "loading"
+                  ? "Buscando lugares..."
+                  : placesStatus === "error"
+                    ? "Não foi possível carregar os lugares"
+                    : `${places.length} ${
+                        places.length === 1 ? "lugar" : "lugares"
+                      }${area ? ` · ${area.label}` : ""}`}
             </p>
           </div>
 
@@ -708,9 +734,40 @@ export function ExplorePage() {
               </>
             ) : (
               <>
-                {filteredPlaces.length > 0 ? (
+                {placesStatus === "loading" ? (
+                  <div
+                    className="grid gap-5 sm:grid-cols-2 2xl:grid-cols-3"
+                    role="status"
+                    aria-label="Buscando lugares"
+                  >
+                    {[0, 1, 2, 3, 4, 5].map((item) => (
+                      <div
+                        key={item}
+                        className="h-[330px] animate-pulse rounded-2xl border border-black/[0.06] bg-white"
+                      />
+                    ))}
+                  </div>
+                ) : placesStatus === "error" ? (
+                  <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed border-teal/20 bg-white px-6 text-center">
+                    <h3 className="text-lg font-bold text-teal">
+                      Não foi possível buscar lugares
+                    </h3>
+
+                    <p className="mt-2 max-w-sm text-sm leading-6 text-teal-50">
+                      {placesError}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => setReloadKey((current) => current + 1)}
+                      className="mt-5 rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-60"
+                    >
+                      Tentar de novo
+                    </button>
+                  </div>
+                ) : places.length > 0 ? (
                   <div className="grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
-                    {sortedPlaces.map((place) => (
+                    {places.map((place) => (
                       <article
                         key={place.id}
                         className="group overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(12,70,81,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(12,70,81,0.12)]"
@@ -742,39 +799,50 @@ export function ExplorePage() {
                               </h3>
                             </div>
 
-                            <div className="flex items-center gap-1 text-sm font-semibold text-ink">
-                              <Star size={16} fill="currentColor" />
-                              {place.rating}
-                            </div>
+                            {place.rating !== null && (
+                              <div className="flex items-center gap-1 text-sm font-semibold text-ink">
+                                <Star size={16} fill="currentColor" />
+                                {place.rating.toLocaleString("pt-BR", {
+                                  minimumFractionDigits: 1,
+                                  maximumFractionDigits: 1,
+                                })}
+                              </div>
+                            )}
                           </div>
 
                           <p className="mt-2 line-clamp-2 text-sm leading-6 text-teal-50">
-                            {place.description}
+                            {place.address}
                           </p>
 
                           <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-medium text-teal-50">
-                            <span>{place.price}</span>
+                            {place.price && <span>{place.price}</span>}
 
-                            <span className="flex items-center gap-1">
-                              <MapPin size={14} />
-                              {place.distance}
-                            </span>
+                            {formatDistance(place.distanceKm) && (
+                              <span className="flex items-center gap-1">
+                                <MapPin size={14} />
+                                {formatDistance(place.distanceKm)}
+                              </span>
+                            )}
 
-                            <span
-                              className={
-                                place.open ? "text-teal" : "text-danger"
-                              }
-                            >
-                              {place.open ? "Aberto agora" : "Fechado"}
-                            </span>
+                            {place.openNow !== null && (
+                              <span
+                                className={
+                                  place.openNow ? "text-teal" : "text-danger"
+                                }
+                              >
+                                {place.openNow ? "Aberto agora" : "Fechado"}
+                              </span>
+                            )}
                           </div>
 
-                          <Link
-                            href={`/estabelecimentos/${place.id}`}
+                          <a
+                            href={place.mapsUrl}
+                            target="_blank"
+                            rel="noreferrer"
                             className="mt-5 block w-full rounded-xl bg-teal px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-teal-60"
                           >
-                            Ver detalhes
-                          </Link>
+                            Ver no mapa
+                          </a>
                         </div>
                       </article>
                     ))}
@@ -790,20 +858,16 @@ export function ExplorePage() {
                     </h3>
 
                     <p className="mt-2 max-w-sm text-sm leading-6 text-teal-50">
-                      Tente pesquisar outro termo ou escolher uma categoria
-                      diferente.
+                      Tente pesquisar outro termo, afrouxar os filtros ou
+                      escolher uma categoria diferente.
                     </p>
 
                     <button
                       type="button"
-                      onClick={() => {
-                        setSearch("");
-                        setSubmittedSearch("");
-                        setSelectedCategory("Todos");
-                      }}
+                      onClick={clearAllFilters}
                       className="mt-5 rounded-xl bg-blue px-5 py-2.5 text-sm font-bold text-teal-70 transition-colors hover:bg-[#C4E2ED]"
                     >
-                      Limpar busca
+                      Limpar busca e filtros
                     </button>
                   </div>
                 )}
@@ -1097,7 +1161,11 @@ function FilterContent({
 
             <div className="mt-1 flex justify-between text-xs text-teal-50">
               <span>1 km</span>
-              <span>Até {maxDistance} km</span>
+              <span>
+                {maxDistance >= MAX_DISTANCE_KM
+                  ? `${MAX_DISTANCE_KM} km ou mais (sem limite)`
+                  : `Até ${maxDistance} km`}
+              </span>
             </div>
           </div>
 
