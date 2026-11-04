@@ -14,6 +14,7 @@ import { FormEvent, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { buildSearchUrl } from "@/lib/search-routing";
+import { searchPlaces, type PlaceSummary } from "@/lib/places";
 
 const categories = [
   "Todos",
@@ -34,53 +35,6 @@ const eventCategories = [
   "Gastronomia",
   "Esportes",
   "Festas",
-];
-
-const places = [
-  {
-    id: 1,
-    name: "Pizzaria Nostra",
-    category: "Restaurantes",
-    description: "Pizzas artesanais e ambiente aconchegante.",
-    rating: 4.8,
-    distance: "1,2 km",
-    distanceKm: 1.2,
-    price: "$$",
-    open: true,
-  },
-  {
-    id: 2,
-    name: "Café da Praça",
-    category: "Cafeterias",
-    description: "Cafés especiais, doces e opções para o fim da tarde.",
-    rating: 4.7,
-    distance: "2,1 km",
-    distanceKm: 2.1,
-    price: "$$",
-    open: true,
-  },
-  {
-    id: 3,
-    name: "Varanda 51",
-    category: "Bares",
-    description: "Drinks, música e gastronomia para aproveitar a noite.",
-    rating: 4.6,
-    distance: "3,4 km",
-    distanceKm: 3.4,
-    price: "$$$",
-    open: false,
-  },
-  {
-    id: 4,
-    name: "Espaço Cultural",
-    category: "Cultura",
-    description: "Arte, cultura e programação para diferentes públicos.",
-    rating: 4.5,
-    distance: "4,3 km",
-    distanceKm: 4.3,
-    price: "$",
-    open: true,
-  },
 ];
 
 const events = [
@@ -149,12 +103,59 @@ export function ExplorePage() {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
 
   const urlSearch = searchParams.get("busca") ?? "";
+  const regionParam = searchParams.get("regiao") ?? "";
+  const latParam = searchParams.get("lat");
+  const lonParam = searchParams.get("lon");
+  const [remotePlaces, setRemotePlaces] = useState<PlaceSummary[]>([]);
+  const [searchStatus, setSearchStatus] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
+  const [searchError, setSearchError] = useState("");
 
   useEffect(() => {
     setSearch(urlSearch);
     setSubmittedSearch(urlSearch);
     setSelectedCategory("Todos");
   }, [urlSearch, contentType]);
+
+  useEffect(() => {
+    if (contentType !== "lugares") {
+      return;
+    }
+
+    const controller = new AbortController();
+    const query = urlSearch.trim() || "restaurantes e bares";
+    setSearchStatus("loading");
+    setSearchError("");
+
+    searchPlaces(
+      {
+        q: query,
+        bairro: regionParam,
+        lat: latParam,
+        lon: lonParam,
+      },
+      controller.signal,
+    )
+      .then((result) => {
+        setRemotePlaces(result.places);
+        setSearchStatus("ready");
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+        setRemotePlaces([]);
+        setSearchStatus("error");
+        setSearchError(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível buscar lugares agora.",
+        );
+      });
+
+    return () => controller.abort();
+  }, [contentType, urlSearch, regionParam, latParam, lonParam]);
 
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState("");
@@ -171,36 +172,34 @@ export function ExplorePage() {
 
     const term = search.trim();
     const destination = buildSearchUrl(term, contentType);
+    const params = new URLSearchParams(destination.split("?")[1] ?? "");
+
+    if (regionParam.trim()) {
+      params.set("regiao", regionParam.trim());
+    }
+    if (latParam && lonParam) {
+      params.set("lat", latParam);
+      params.set("lon", lonParam);
+    }
 
     setSubmittedSearch(term);
-    router.push(destination);
+    router.push(`/explorar?${params.toString()}`);
   }
 
-  const filteredPlaces = places.filter((place) => {
+  const filteredPlaces = remotePlaces.filter((place) => {
     const matchesCategory =
-      selectedCategory === "Todos" || place.category === selectedCategory;
-
-    const term = submittedSearch.toLowerCase();
-
-    const matchesSearch =
-      !term ||
-      place.name.toLowerCase().includes(term) ||
-      place.category.toLowerCase().includes(term) ||
-      place.description.toLowerCase().includes(term);
+      selectedCategory === "Todos" ||
+      place.categories.includes(selectedCategory) ||
+      place.category === selectedCategory;
 
     const matchesPrice = !selectedPrice || place.price === selectedPrice;
 
-    const matchesDistance = place.distanceKm <= maxDistance;
+    const matchesDistance =
+      place.distanceKm == null || place.distanceKm <= maxDistance;
 
-    const matchesOpen = !openNow || place.open;
+    const matchesOpen = !openNow || place.openNow === true;
 
-    return (
-      matchesCategory &&
-      matchesSearch &&
-      matchesPrice &&
-      matchesDistance &&
-      matchesOpen
-    );
+    return matchesCategory && matchesPrice && matchesDistance && matchesOpen;
   });
 
   const filteredEvents = events.filter((event) => {
@@ -227,11 +226,14 @@ export function ExplorePage() {
 
   const sortedPlaces = [...filteredPlaces].sort((a, b) => {
     if (sortBy === "rating") {
-      return b.rating - a.rating;
+      return (b.rating ?? -1) - (a.rating ?? -1);
     }
 
     if (sortBy === "distance") {
-      return a.distanceKm - b.distanceKm;
+      return (
+        (a.distanceKm ?? Number.POSITIVE_INFINITY) -
+        (b.distanceKm ?? Number.POSITIVE_INFINITY)
+      );
     }
 
     return 0;
@@ -506,9 +508,11 @@ export function ExplorePage() {
                 ? `${filteredEvents.length} ${
                     filteredEvents.length === 1 ? "evento" : "eventos"
                   }`
-                : `${filteredPlaces.length} ${
-                    filteredPlaces.length === 1 ? "lugar" : "lugares"
-                  }`}
+                : searchStatus === "loading"
+                  ? "Buscando lugares..."
+                  : `${sortedPlaces.length} ${
+                      sortedPlaces.length === 1 ? "lugar" : "lugares"
+                    }`}
             </p>
           </div>
 
@@ -708,28 +712,26 @@ export function ExplorePage() {
               </>
             ) : (
               <>
-                {filteredPlaces.length > 0 ? (
+                {searchStatus === "loading" ? (
+                  <div className="flex min-h-80 items-center justify-center rounded-2xl border border-dashed border-teal/20 bg-white px-6 text-center text-sm font-semibold text-teal-50">
+                    Buscando lugares em Imperatriz...
+                  </div>
+                ) : searchStatus === "error" ? (
+                  <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed border-teal/20 bg-white px-6 text-center">
+                    <h3 className="text-lg font-bold text-teal">
+                      Não foi possível buscar agora
+                    </h3>
+                    <p className="mt-2 max-w-sm text-sm leading-6 text-teal-50">
+                      {searchError}
+                    </p>
+                  </div>
+                ) : sortedPlaces.length > 0 ? (
                   <div className="grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
                     {sortedPlaces.map((place) => (
                       <article
                         key={place.id}
                         className="group overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(12,70,81,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(12,70,81,0.12)]"
                       >
-                        <div className="relative h-40 bg-teal-10 sm:h-44">
-                          <div className="flex h-full items-center justify-center text-sm font-medium text-teal-50">
-                            Foto do local
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => setShowLoginPrompt(true)}
-                            aria-label={`Favoritar ${place.name}`}
-                            className="absolute right-3 top-3 flex size-9 items-center justify-center rounded-full bg-white text-teal shadow-sm transition hover:scale-105"
-                          >
-                            <Heart size={18} />
-                          </button>
-                        </div>
-
                         <div className="p-4 sm:p-5">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
@@ -742,39 +744,61 @@ export function ExplorePage() {
                               </h3>
                             </div>
 
-                            <div className="flex items-center gap-1 text-sm font-semibold text-ink">
-                              <Star size={16} fill="currentColor" />
-                              {place.rating}
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 text-sm font-semibold text-ink">
+                                <Star size={16} fill="currentColor" />
+                                {place.rating == null
+                                  ? "—"
+                                  : place.rating.toFixed(1).replace(".", ",")}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setShowLoginPrompt(true)}
+                                aria-label={`Favoritar ${place.name}`}
+                                className="flex size-9 items-center justify-center rounded-full bg-chip text-teal transition hover:scale-105"
+                              >
+                                <Heart size={18} />
+                              </button>
                             </div>
                           </div>
 
                           <p className="mt-2 line-clamp-2 text-sm leading-6 text-teal-50">
-                            {place.description}
+                            {place.address || "Imperatriz, MA"}
                           </p>
 
                           <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-medium text-teal-50">
-                            <span>{place.price}</span>
+                            {place.price ? <span>{place.price}</span> : null}
 
-                            <span className="flex items-center gap-1">
-                              <MapPin size={14} />
-                              {place.distance}
-                            </span>
+                            {place.distanceKm != null ? (
+                              <span className="flex items-center gap-1">
+                                <MapPin size={14} />
+                                {`${place.distanceKm.toFixed(1).replace(".", ",")} km`}
+                              </span>
+                            ) : null}
 
                             <span
                               className={
-                                place.open ? "text-teal" : "text-danger"
+                                place.openNow === false
+                                  ? "text-danger"
+                                  : "text-teal"
                               }
                             >
-                              {place.open ? "Aberto agora" : "Fechado"}
+                              {place.openNow === true
+                                ? "Aberto agora"
+                                : place.openNow === false
+                                  ? "Fechado"
+                                  : "Horário não informado"}
                             </span>
                           </div>
 
-                          <Link
-                            href={`/estabelecimentos/${place.id}`}
+                          <a
+                            href={place.mapsUrl}
+                            target="_blank"
+                            rel="noreferrer"
                             className="mt-5 block w-full rounded-xl bg-teal px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-teal-60"
                           >
-                            Ver detalhes
-                          </Link>
+                            Ver no mapa
+                          </a>
                         </div>
                       </article>
                     ))}
@@ -800,6 +824,7 @@ export function ExplorePage() {
                         setSearch("");
                         setSubmittedSearch("");
                         setSelectedCategory("Todos");
+                        router.push("/explorar?tipo=lugares");
                       }}
                       className="mt-5 rounded-xl bg-blue px-5 py-2.5 text-sm font-bold text-teal-70 transition-colors hover:bg-[#C4E2ED]"
                     >
