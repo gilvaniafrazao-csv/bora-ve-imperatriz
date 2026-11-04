@@ -1,11 +1,20 @@
 import nodemailer from 'nodemailer';
-import { env } from '../../config/env';
+import { getMailConfig } from '../../config/env';
+
+/*
+ * A configuracao vem de getMailConfig(): em desenvolvimento usa o Mailpit
+ * local (sem TLS); em producao exige TLS, credenciais e remetente por
+ * variaveis de ambiente. Se faltar alguma em producao, o servidor nem sobe.
+ */
+const mailConfig = getMailConfig();
 
 const transporter = nodemailer.createTransport({
-  host: env.smtpHost,
-  port: env.smtpPort,
-  secure: false,
-  ignoreTLS: true,
+  host: mailConfig.host,
+  port: mailConfig.port,
+  secure: mailConfig.secure,
+  requireTLS: mailConfig.requireTLS,
+  ignoreTLS: mailConfig.ignoreTLS,
+  auth: mailConfig.auth,
 });
 
 function escapeHtml(value: string): string {
@@ -22,7 +31,7 @@ export async function sendPasswordResetEmail(
   link: string,
 ): Promise<void> {
   await transporter.sendMail({
-    from: env.mailFrom,
+    from: mailConfig.from,
     to,
     subject: 'Recuperação de senha - Bora Vê',
     text:

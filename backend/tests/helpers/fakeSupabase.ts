@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import http from 'node:http';
 import { AddressInfo } from 'node:net';
 
@@ -14,6 +15,15 @@ export const CATEGORIES = ['sushi', 'pizza', 'hamburguer', 'bar', 'churrasco', '
 type UserRow = { id: string; name: string; email: string; password_hash: string; created_at: string };
 type PreferencesRow = { price_range: string | null; updated_at: string };
 type Link = { user_id: string; category_id: string };
+type ResetTokenRow = {
+  user_id: string;
+  token_hash: string;
+  expires_at: string;
+  used_at: string | null;
+  created_at: string;
+};
+
+export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
 const eq = (value: string | null) => (value ?? '').replace(/^(eq|ilike)\./, '');
 const inList = (value: string | null) =>
@@ -23,6 +33,7 @@ export class FakeSupabase {
   users = new Map<string, UserRow>();
   preferences = new Map<string, PreferencesRow>();
   links: Link[] = [];
+  resetTokens: ResetTokenRow[] = [];
   requests: string[] = [];
   /** `"METHOD tabela"` → próxima chamada responde 500 (uma vez). */
   private failures = new Set<string>();
@@ -42,6 +53,7 @@ export class FakeSupabase {
     this.users.clear();
     this.preferences.clear();
     this.links = [];
+    this.resetTokens = [];
     this.requests = [];
     this.failures.clear();
   }
@@ -56,6 +68,21 @@ export class FakeSupabase {
       name: 'Teste',
       email: `${id}@example.com`,
       password_hash: 'x',
+      created_at: new Date().toISOString(),
+    });
+  }
+
+  /** Grava um token de recuperação direto no "banco" (só o hash, como a API faz). */
+  addResetToken(
+    userId: string,
+    token: string,
+    options: { expiresAt?: Date; usedAt?: Date } = {},
+  ): void {
+    this.resetTokens.push({
+      user_id: userId,
+      token_hash: hashToken(token),
+      expires_at: (options.expiresAt ?? new Date(Date.now() + 60 * 60 * 1000)).toISOString(),
+      used_at: options.usedAt?.toISOString() ?? null,
       created_at: new Date().toISOString(),
     });
   }
@@ -173,6 +200,52 @@ export class FakeSupabase {
             (link) => !(link.user_id === userId && ids.includes(link.category_id)),
           );
           return send(204, null);
+        }
+        case 'GET password_reset_tokens': {
+          const userId = eq(q.get('user_id'));
+          const latest = this.resetTokens
+            .filter((row) => row.user_id === userId)
+            .sort((a, b) => b.created_at.localeCompare(a.created_at))
+            .slice(0, 1);
+          return send(200, latest);
+        }
+        case 'POST password_reset_tokens': {
+          this.resetTokens.push({ used_at: null, created_at: new Date().toISOString(), ...body });
+          return send(201, []);
+        }
+        case 'PATCH password_reset_tokens': {
+          const userId = q.get('user_id');
+          const tokenHash = q.get('token_hash');
+          for (const row of this.resetTokens) {
+            const matches =
+              row.used_at === null &&
+              (userId === null || row.user_id === eq(userId)) &&
+              (tokenHash === null || row.token_hash === eq(tokenHash));
+            if (matches) {
+              row.used_at = body.used_at;
+            }
+          }
+          return send(204, null);
+        }
+        case 'POST rpc/reset_password_with_token': {
+          // Imita a função SQL: consome o token e troca a senha juntos.
+          const now = new Date().toISOString();
+          const row = this.resetTokens.find(
+            (r) => r.token_hash === body.p_token_hash && r.used_at === null && r.expires_at > now,
+          );
+          if (!row) {
+            return send(200, null);
+          }
+          const user = this.users.get(row.user_id);
+          if (user) {
+            user.password_hash = body.p_password_hash;
+          }
+          for (const r of this.resetTokens) {
+            if (r.user_id === row.user_id && r.used_at === null) {
+              r.used_at = now;
+            }
+          }
+          return send(200, row.user_id);
         }
         default:
           return send(404, { message: `fake: rota não tratada ${method} ${table}` });

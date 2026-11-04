@@ -28,6 +28,9 @@ function isAllowedOrigin(origin: string | undefined): boolean {
 export function createApp(): Application {
   const app = express();
 
+  // Atras de proxy (ex.: Render), usa o IP real do cliente no rate limit.
+  app.set('trust proxy', 1);
+  
   app.use(helmet());
 
   app.use(

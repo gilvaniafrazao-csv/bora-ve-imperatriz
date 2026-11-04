@@ -3,16 +3,17 @@ import bcrypt from 'bcrypt';
 import { env } from '../../config/env';
 import { AppError } from '../../shared/errors/AppError';
 import {
-  consumeResetToken,
   insertPasswordResetToken,
+  invalidateResetToken,
   invalidateUserResetTokens,
   deleteUserById,
   findAuthUserByEmail,
   findCategoryIdsBySlugs,
+  findLatestResetTokenCreatedAt,
   findUserIdByEmail,
   insertUser,
   insertUserPreferences,
-  updateUserPassword,
+  resetPasswordWithToken,
 } from './auth.repository';
 import { PublicUser } from './auth.types';
 import {
@@ -111,6 +112,7 @@ export async function loginUser(body: unknown): Promise<{ user: PublicUser; toke
 }
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const RESET_REQUEST_COOLDOWN_MS = 60 * 1000;
 
 function hashResetToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
@@ -129,25 +131,52 @@ export async function requestPasswordRecovery(body: unknown): Promise<void> {
     return;
   }
 
+  const lastRequestAt = await findLatestResetTokenCreatedAt(user.id);
+  if (lastRequestAt && Date.now() - lastRequestAt.getTime() < RESET_REQUEST_COOLDOWN_MS) {
+    // Pedido recente: nao envia outro e-mail. A resposta continua a mesma.
+    return;
+  }
+
   const token = randomBytes(32).toString('base64url');
   const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
 
+  const tokenHash = hashResetToken(token);
+
   await invalidateUserResetTokens(user.id);
-  await insertPasswordResetToken(user.id, hashResetToken(token), expiresAt);
+  await insertPasswordResetToken(user.id, tokenHash, expiresAt);
 
   const link = `${env.frontendUrl}/redefinir-senha?token=${token}`;
 
   try {
     await sendPasswordResetEmail(user.email, user.name, link);
   } catch (error) {
-    console.error('[auth.service] falha ao enviar e-mail de recuperação', error);
+    // Nunca logar o token nem o link. A resposta ao cliente continua a mesma.
+    console.error('[auth.service] falha ao enviar e-mail de recuperação', {
+      userId: user.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    // Ninguém recebeu o link: invalida o token para não deixá-lo válido à toa.
+    try {
+      await invalidateResetToken(tokenHash);
+    } catch {
+      console.error('[auth.service] falha ao invalidar token após erro de envio', {
+        userId: user.id,
+      });
+    }
   }
 }
 
+/**
+ * Redefine a senha a partir do token do e-mail. O hash da nova senha é
+ * calculado antes de tocar no banco; consumir o token e gravar a senha
+ * acontecem juntos numa transação, então uma falha não queima o link.
+ */
 export async function resetUserPassword(body: unknown): Promise<void> {
   const { token, newPassword } = parseResetPasswordBody(body);
 
-  const userId = await consumeResetToken(hashResetToken(token));
+  const newPasswordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  const userId = await resetPasswordWithToken(hashResetToken(token), newPasswordHash);
   if (!userId) {
     throw new AppError(
       'Link inválido ou expirado. Peça uma nova recuperação de senha.',
@@ -155,8 +184,4 @@ export async function resetUserPassword(body: unknown): Promise<void> {
       'INVALID_RESET_TOKEN',
     );
   }
-
-  const newPasswordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-  await updateUserPassword(userId, newPasswordHash);
-  await invalidateUserResetTokens(userId);
 }

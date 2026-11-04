@@ -147,17 +147,6 @@ export async function deleteUserById(userId: string): Promise<void> {
     console.error('[auth.repository] compensating user delete failed', error);
   }
 }
-export async function updateUserPassword(userId: string, newPasswordHash: string): Promise<void> {
-  const { error } = await getSupabaseClient()
-    .from('users')
-    .update({ password_hash: newPasswordHash })
-    .eq('id', userId);
-
-  if (error) {
-    console.error('[auth.repository] falha ao atualizar senha', error);
-    throw toDatabaseUnavailable();
-  }
-}
 
 export async function insertPasswordResetToken(
   userId: string,
@@ -191,27 +180,56 @@ export async function invalidateUserResetTokens(userId: string): Promise<void> {
   }
 }
 
-/**
- * Consome o token numa única operação: só funciona se ele existir,
- * ainda não tiver sido usado e não tiver expirado. Devolve o id do usuário.
- */
-export async function consumeResetToken(tokenHash: string): Promise<string | null> {
-  const now = new Date().toISOString();
-
-  const { data, error } = await getSupabaseClient()
+export async function invalidateResetToken(tokenHash: string): Promise<void> {
+  const { error } = await getSupabaseClient()
     .from('password_reset_tokens')
-    .update({ used_at: now })
+    .update({ used_at: new Date().toISOString() })
     .eq('token_hash', tokenHash)
-    .is('used_at', null)
-    .gt('expires_at', now)
-    .select('user_id')
-    .maybeSingle<{ user_id: string }>();
+    .is('used_at', null);
 
   if (error) {
-    console.error('[auth.repository] falha ao consumir token', error);
+    console.error('[auth.repository] falha ao invalidar token', error);
+    throw toDatabaseUnavailable();
+  }
+}
+
+/**
+ * Consome o token e grava a nova senha numa única transação (função SQL
+ * reset_password_with_token): só funciona se o token existir, ainda não
+ * tiver sido usado e não tiver expirado. Se algo falhar, nada é gravado e o
+ * link continua válido. Devolve o id do usuário, ou null se o token não vale.
+ */
+export async function resetPasswordWithToken(
+  tokenHash: string,
+  passwordHash: string,
+): Promise<string | null> {
+  const { data, error } = await getSupabaseClient().rpc('reset_password_with_token', {
+    p_token_hash: tokenHash,
+    p_password_hash: passwordHash,
+  });
+
+  if (error) {
+    console.error('[auth.repository] reset_password_with_token failed', error);
     throw toDatabaseUnavailable();
   }
 
-  return data?.user_id ?? null;
+  return (data as string | null) ?? null;
+}
+
+export async function findLatestResetTokenCreatedAt(userId: string): Promise<Date | null> {
+  const { data, error } = await getSupabaseClient()
+    .from('password_reset_tokens')
+    .select('created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle<{ created_at: string }>();
+
+  if (error) {
+    console.error('[auth.repository] falha ao consultar ultimo token', error);
+    throw toDatabaseUnavailable();
+  }
+
+  return data ? new Date(data.created_at) : null;
 }
 
