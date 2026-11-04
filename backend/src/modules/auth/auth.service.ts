@@ -62,6 +62,10 @@ function requireJwtSecret(): string {
   return env.jwtSecret;
 }
 
+export function issueAccessToken(userId: string): string {
+  return signAccessToken(userId);
+}
+
 function signAccessToken(userId: string): string {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
   const now = Math.floor(Date.now() / 1000);
@@ -81,6 +85,10 @@ export async function loginUser(body: unknown): Promise<{ user: PublicUser; toke
   const input = parseLoginBody(body);
   const row = await findAuthUserByEmail(input.email);
   if (!row) {
+    throw invalidCredentials();
+  }
+
+  if (!row.password_hash) {
     throw invalidCredentials();
   }
 

@@ -1,6 +1,6 @@
 import { getSupabaseClient } from '../../config/supabase';
 import { AppError } from '../../shared/errors/AppError';
-import { AuthUserRow, PublicUser, RegisterInput, UserRow } from './auth.types';
+import { AuthUserRow, IdentityRow, PublicUser, RegisterInput, UserRow } from './auth.types';
 import { OnboardingCategorySlug } from './onboarding-categories';
 
 function isUniqueViolation(error: { code?: string; message?: string } | null): boolean {
@@ -81,9 +81,71 @@ export async function findCategoryIdsBySlugs(
   return slugs.map((slug) => idBySlug.get(slug) as string);
 }
 
+export async function findUserById(id: string): Promise<PublicUser | null> {
+  const { data, error } = await getSupabaseClient()
+    .from('users')
+    .select('id, name, email, created_at')
+    .eq('id', id)
+    .maybeSingle<UserRow>();
+
+  if (error) {
+    throw toDatabaseUnavailable();
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    name: data.name,
+    email: data.email,
+    createdAt: data.created_at,
+  };
+}
+
+export async function findIdentity(
+  provider: string,
+  providerSubject: string,
+): Promise<IdentityRow | null> {
+  const { data, error } = await getSupabaseClient()
+    .from('user_identities')
+    .select('user_id, provider, provider_subject, email')
+    .eq('provider', provider)
+    .eq('provider_subject', providerSubject)
+    .maybeSingle<IdentityRow>();
+
+  if (error) {
+    throw toDatabaseUnavailable();
+  }
+
+  return data ?? null;
+}
+
+export async function insertIdentity(input: IdentityRow): Promise<void> {
+  const { error } = await getSupabaseClient().from('user_identities').insert({
+    user_id: input.user_id,
+    provider: input.provider,
+    provider_subject: input.provider_subject,
+    email: input.email,
+  });
+
+  if (error) {
+    if (isUniqueViolation(error)) {
+      throw new AppError(
+        'Essa conta do provedor já está vinculada.',
+        409,
+        'IDENTITY_ALREADY_LINKED',
+      );
+    }
+    console.error('[auth.repository] identity insert failed', error);
+    throw toDatabaseUnavailable();
+  }
+}
+
 export async function insertUser(
   input: Pick<RegisterInput, 'name' | 'email'>,
-  passwordHash: string,
+  passwordHash: string | null,
 ): Promise<PublicUser> {
   const { data, error } = await getSupabaseClient()
     .from('users')

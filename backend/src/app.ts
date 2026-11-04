@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { env } from './config/env';
 import { authRouter } from './modules/auth/auth.routes';
 import { healthRouter } from './modules/health/health.routes';
+import { placesRouter } from './modules/places/places.routes';
 import { preferencesRouter } from './modules/preferences/preferences.routes';
 import { recommendationsRouter } from './modules/recommendations/recommendations.routes';
 import { errorHandler, notFoundHandler } from './shared/http/errorHandler';
@@ -39,12 +40,14 @@ export function createApp(): Application {
   );
 
   app.use(express.json());
+  app.use(express.urlencoded({ extended: false }));
   app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
 
   app.use(healthRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/preferences', preferencesRouter);
   app.use('/api/recommendations', recommendationsRouter);
+  app.use('/api/places', placesRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

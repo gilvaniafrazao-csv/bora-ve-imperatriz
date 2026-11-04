@@ -32,5 +32,12 @@ export type UserRow = {
 };
 
 export type AuthUserRow = UserRow & {
-  password_hash: string;
+  password_hash: string | null;
+};
+
+export type IdentityRow = {
+  user_id: string;
+  provider: string;
+  provider_subject: string;
+  email: string | null;
 };

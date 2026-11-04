@@ -61,13 +61,20 @@ export async function request(
   ctx: TestContext,
   method: string,
   path: string,
-  options: { token?: string; body?: unknown } = {},
-): Promise<{ status: number; json: Json }> {
+  options: {
+    token?: string;
+    body?: unknown;
+    headers?: Record<string, string>;
+    redirect?: 'follow' | 'error' | 'manual';
+  } = {},
+): Promise<{ status: number; json: Json; location: string | null; cookies: string[] }> {
   const response = await fetch(`${ctx.baseUrl}${path}`, {
     method,
+    redirect: options.redirect ?? 'follow',
     headers: {
-      'Content-Type': 'application/json',
+      ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
       ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+      ...options.headers,
     },
     body:
       options.body === undefined
@@ -76,5 +83,12 @@ export async function request(
           ? options.body
           : JSON.stringify(options.body),
   });
-  return { status: response.status, json: await response.json().catch(() => null) };
+  const cookies =
+    typeof response.headers.getSetCookie === 'function' ? response.headers.getSetCookie() : [];
+  return {
+    status: response.status,
+    json: await response.json().catch(() => null),
+    location: response.headers.get('location'),
+    cookies,
+  };
 }

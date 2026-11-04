@@ -437,23 +437,6 @@ export function ExplorePage() {
         placeholder:text-white/55
       "
             />
-
-            <button
-              type="submit"
-              className="
-        shrink-0
-        rounded-full
-        bg-[#dfff00]
-        px-3
-        py-1.5
-        text-[10px]
-        font-black
-        uppercase
-        text-[#0b3f45]
-      "
-            >
-              Buscar
-            </button>
           </form>
         </div>
       </section>
@@ -539,13 +522,13 @@ export function ExplorePage() {
               Filtros
             </button>
 
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-xl border border-teal/15 bg-white px-4 py-2.5 text-sm font-semibold text-teal"
+            <Link
+              href="/mapa"
+              className="flex items-center gap-2 rounded-xl border border-teal/15 bg-white px-4 py-2.5 text-sm font-semibold text-teal transition hover:bg-chip"
             >
               <Map size={17} />
               Mapa
-            </button>
+            </Link>
 
             <div className="relative hidden sm:block">
               {contentType === "lugares" && (
@@ -786,12 +769,12 @@ export function ExplorePage() {
                             </span>
                           </div>
 
-                          <button
-                            type="button"
-                            className="mt-5 w-full rounded-xl bg-teal px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-60"
+                          <Link
+                            href={`/estabelecimentos/${place.id}`}
+                            className="mt-5 block w-full rounded-xl bg-teal px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-teal-60"
                           >
                             Ver detalhes
-                          </button>
+                          </Link>
                         </div>
                       </article>
                     ))}

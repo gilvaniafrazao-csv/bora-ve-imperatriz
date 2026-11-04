@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, ReactNode, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { FormEvent, ReactNode, useEffect, useState } from "react";
 import {
   Beef,
   CakeSlice,
@@ -14,7 +15,14 @@ import {
 } from "lucide-react";
 
 import { ApiError } from "@/lib/api";
-import { registerUser } from "@/lib/auth";
+import {
+  describeOAuthError,
+  OAUTH_PENDING_KEY,
+  oauthStartUrl,
+  registerUser,
+  registerWithOAuth,
+  saveAuthToken,
+} from "@/lib/auth";
 
 type FieldKey = "name" | "email" | "password";
 type FieldErrors = Partial<Record<FieldKey, string>>;
@@ -131,11 +139,49 @@ export function RegisterForm() {
   const [selectedSlugs, setSelectedSlugs] = useState<OnboardingSlug[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [createdName, setCreatedName] = useState<string | null>(null);
+  const [socialPending, setSocialPending] = useState<{
+    code: string;
+    name: string;
+    email: string;
+  } | null>(null);
+  const [socialSignedIn, setSocialSignedIn] = useState(false);
+  const searchParams = useSearchParams();
 
-  function onSocialPick(label: string) {
-    setFormError(null);
-    setSocialHint(`Cadastro com ${label} em breve.`);
-  }
+  useEffect(() => {
+    const message = describeOAuthError(
+      searchParams.get("oauth_error"),
+      searchParams.get("provedor"),
+    );
+    if (message) {
+      setSocialHint(message);
+    }
+
+    const raw = sessionStorage.getItem(OAUTH_PENDING_KEY);
+    if (!raw) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as {
+        code?: string;
+        name?: string;
+        email?: string;
+      };
+      if (!parsed.code || !parsed.name || !parsed.email) {
+        return;
+      }
+      setSocialPending({
+        code: parsed.code,
+        name: parsed.name,
+        email: parsed.email,
+      });
+      setName(parsed.name);
+      setEmail(parsed.email);
+      setStep(2);
+    } catch {
+      sessionStorage.removeItem(OAUTH_PENDING_KEY);
+    }
+  }, [searchParams]);
 
   function clearFieldError(field: FieldKey) {
     if (!fieldErrors[field]) {
@@ -177,6 +223,10 @@ export function RegisterForm() {
   function goBackToAccount() {
     setPreferencesError(null);
     setFormError(null);
+    if (socialPending) {
+      sessionStorage.removeItem(OAUTH_PENDING_KEY);
+      setSocialPending(null);
+    }
     setStep(1);
   }
 
@@ -185,6 +235,51 @@ export function RegisterForm() {
 
     setFormError(null);
     setPreferencesError(null);
+
+    if (socialPending) {
+      if (selectedSlugs.length < MIN_CATEGORIES) {
+        setPreferencesError(`Escolha pelo menos ${MIN_CATEGORIES} categorias.`);
+        return;
+      }
+
+      setSubmitting(true);
+
+      try {
+        const result = await registerWithOAuth({
+          code: socialPending.code,
+          categorySlugs: selectedSlugs,
+        });
+        saveAuthToken(result.token);
+        sessionStorage.removeItem(OAUTH_PENDING_KEY);
+        setSocialPending(null);
+        setCreatedName(result.user.name);
+        setSocialSignedIn(true);
+      } catch (error) {
+        if (error instanceof ApiError) {
+          if (error.code === "OAUTH_CODE_INVALID") {
+            sessionStorage.removeItem(OAUTH_PENDING_KEY);
+            setSocialPending(null);
+            setStep(1);
+            setSocialHint(error.message);
+            return;
+          }
+
+          const categoryError = getCategoryError(error.details);
+          if (categoryError) {
+            setPreferencesError(categoryError);
+            return;
+          }
+
+          setFormError(error.message);
+        } else {
+          setFormError("Não foi possível criar a conta. Tente novamente.");
+        }
+      } finally {
+        setSubmitting(false);
+      }
+
+      return;
+    }
 
     const localErrors = validate(name, email, password);
 
@@ -334,13 +429,14 @@ export function RegisterForm() {
 
         <div className="w-full max-w-[25rem]">
           {createdName ? (
-            <RegistrationSuccess name={createdName} />
+            <RegistrationSuccess name={createdName} signedIn={socialSignedIn} />
           ) : step === 2 ? (
             <PreferencesStep
               selectedSlugs={selectedSlugs}
               preferencesError={preferencesError}
               formError={formError}
               submitting={submitting}
+              accountEmail={socialPending?.email ?? null}
               onToggle={toggleCategory}
               onBack={goBackToAccount}
               onSubmit={createAccount}
@@ -367,7 +463,6 @@ export function RegisterForm() {
                 clearFieldError("password");
               }}
               onTogglePassword={() => setShowPassword((current) => !current)}
-              onSocialPick={onSocialPick}
               onSubmit={goToPreferences}
             />
           )}
@@ -389,7 +484,6 @@ type AccountStepProps = {
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onTogglePassword: () => void;
-  onSocialPick: (label: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
@@ -405,7 +499,6 @@ function AccountStep({
   onEmailChange,
   onPasswordChange,
   onTogglePassword,
-  onSocialPick,
   onSubmit,
 }: AccountStepProps) {
   return (
@@ -538,15 +631,18 @@ function AccountStep({
         className="flex justify-center gap-5"
         aria-label="Opções de cadastro com rede social"
       >
-        <SocialButton label="Apple" onPick={onSocialPick}>
+        <SocialButton label="Apple" href={oauthStartUrl("apple", "cadastro")}>
           <AppleIcon />
         </SocialButton>
 
-        <SocialButton label="Google" onPick={onSocialPick}>
+        <SocialButton label="Google" href={oauthStartUrl("google", "cadastro")}>
           <GoogleIcon />
         </SocialButton>
 
-        <SocialButton label="Facebook" onPick={onSocialPick}>
+        <SocialButton
+          label="Facebook"
+          href={oauthStartUrl("facebook", "cadastro")}
+        >
           <FacebookIcon />
         </SocialButton>
       </div>
@@ -578,6 +674,7 @@ type PreferencesStepProps = {
   preferencesError: string | null;
   formError: string | null;
   submitting: boolean;
+  accountEmail: string | null;
   onToggle: (slug: OnboardingSlug) => void;
   onBack: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -588,6 +685,7 @@ function PreferencesStep({
   preferencesError,
   formError,
   submitting,
+  accountEmail,
   onToggle,
   onBack,
   onSubmit,
@@ -609,6 +707,12 @@ function PreferencesStep({
           Escolha pelo menos {MIN_CATEGORIES} opções. Vamos usar seus interesses
           para personalizar suas descobertas.
         </p>
+        {accountEmail ? (
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            A conta será criada para{" "}
+            <strong className="font-semibold text-teal">{accountEmail}</strong>.
+          </p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 min-[600px]:gap-4 max-[359px]:grid-cols-1">
@@ -694,7 +798,13 @@ function PreferencesStep({
   );
 }
 
-function RegistrationSuccess({ name }: { name: string }) {
+function RegistrationSuccess({
+  name,
+  signedIn = false,
+}: {
+  name: string;
+  signedIn?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-4" role="status">
       <StepBar step={2} />
@@ -711,10 +821,10 @@ function RegistrationSuccess({ name }: { name: string }) {
       </p>
 
       <Link
-        href="/login"
+        href={signedIn ? "/home" : "/login"}
         className="mt-2 inline-flex h-12 items-center justify-center rounded-xl bg-teal px-5 text-sm font-bold text-white transition hover:bg-teal-70 focus:outline-none focus:ring-2 focus:ring-teal/20"
       >
-        Entrar na minha conta
+        {signedIn ? "Ir para a Home" : "Entrar na minha conta"}
       </Link>
     </div>
   );
@@ -758,22 +868,20 @@ function FieldError({ id, children }: { id?: string; children: ReactNode }) {
 function SocialButton({
   children,
   label,
-  onPick,
+  href,
 }: {
   children: ReactNode;
   label: string;
-  onPick: (label: string) => void;
+  href: string;
 }) {
   return (
-    <button
-      type="button"
-      title={`${label} — em breve`}
-      aria-label={`Cadastrar com ${label} (em breve)`}
-      onClick={() => onPick(label)}
+    <a
+      href={href}
+      aria-label={`Cadastrar com ${label}`}
       className="grid size-10 place-items-center rounded-full bg-white text-teal shadow-[0_1px_3px_rgba(12,70,81,0.16)] transition hover:-translate-y-0.5 hover:bg-[#f7f7f7] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal/20"
     >
       {children}
-    </button>
+    </a>
   );
 }
 

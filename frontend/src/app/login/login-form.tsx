@@ -1,11 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, ReactNode, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 import { ApiError } from "@/lib/api";
-import { loginUser, saveAuthToken } from "@/lib/auth";
+import {
+  describeOAuthError,
+  loginUser,
+  oauthStartUrl,
+  saveAuthToken,
+} from "@/lib/auth";
 
 type FieldKey = "email" | "password";
 type FieldErrors = Partial<Record<FieldKey, string>>;
@@ -72,7 +78,13 @@ export function LoginForm() {
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [hint, setHint] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [hint, setHint] = useState<string | null>(
+    describeOAuthError(
+      searchParams.get("oauth_error"),
+      searchParams.get("provedor"),
+    ),
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [signedInName, setSignedInName] = useState<string | null>(null);
@@ -80,11 +92,6 @@ export function LoginForm() {
   function clearMessages() {
     setFormError(null);
     setHint(null);
-  }
-
-  function onSocialPick(label: string) {
-    setFormError(null);
-    setHint(`Login com ${label} em breve.`);
   }
 
   function onForgotPassword() {
@@ -307,15 +314,18 @@ export function LoginForm() {
                 className="flex justify-center gap-5"
                 aria-label="Opções de login com rede social"
               >
-                <SocialButton label="Apple" onPick={onSocialPick}>
+                <SocialButton label="Apple" href={oauthStartUrl("apple", "login")}>
                   <AppleIcon />
                 </SocialButton>
 
-                <SocialButton label="Google" onPick={onSocialPick}>
+                <SocialButton label="Google" href={oauthStartUrl("google", "login")}>
                   <GoogleIcon />
                 </SocialButton>
 
-                <SocialButton label="Facebook" onPick={onSocialPick}>
+                <SocialButton
+                  label="Facebook"
+                  href={oauthStartUrl("facebook", "login")}
+                >
                   <FacebookIcon />
                 </SocialButton>
               </div>
@@ -418,22 +428,20 @@ function FieldError({ id, children }: { id?: string; children: ReactNode }) {
 function SocialButton({
   children,
   label,
-  onPick,
+  href,
 }: {
   children: ReactNode;
   label: string;
-  onPick: (label: string) => void;
+  href: string;
 }) {
   return (
-    <button
-      type="button"
-      title={`${label} — em breve`}
-      aria-label={`Entrar com ${label} (em breve)`}
-      onClick={() => onPick(label)}
+    <a
+      href={href}
+      aria-label={`Entrar com ${label}`}
       className="grid size-10 place-items-center rounded-full bg-white text-teal shadow-[0_1px_3px_rgba(12,70,81,0.16)] transition hover:-translate-y-0.5 hover:bg-[#f7f7f7] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal/20"
     >
       {children}
-    </button>
+    </a>
   );
 }
 
