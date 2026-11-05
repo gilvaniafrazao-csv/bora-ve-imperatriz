@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts src/modules/*/*.test.ts"
   },
   "engines": {
     "node": "22.x"
